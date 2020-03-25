@@ -57,11 +57,11 @@ class Array():
             the value, if not set before, the default value will be returned.
         """
         for I, J in zip(self.__IndexRange, indices):
-            assert I > J >= 0, "Index out of range. "
+            assert I > J >= 0, f"Index out of range: J:{J}, I:{I}"
         self.__Map[indices] = value
         return
 
-    def slice(self, indices: Tuple[int]):
+    def slice(self, slicer: Tuple[int]):
         """
             Slice a sub array inside the array.
             example:
@@ -69,33 +69,36 @@ class Array():
                 indices: (-1, 3)
                 then it will slice (?, 3) and put then into an array with dimension (Arr.size()[0], 1)
                 which is basically the third column, but as a m by 1 array.
-        :param indices:
+        :param slicer:
             A list of tuple with dimension less than or equal to the dimension of the
             array.
         :return:
             Another instance of the Array class.
         """
         # check if the slicing index is valid:
-        for I, E in enumerate(indices):
+        for I, E in enumerate(slicer):
             assert -1 <= E <= self.__IndexRange[I], "Invalid index for slicing."
 
         # Flatten the dimension from the slicing index:'
         NewDimension = []
-        for I, E in enumerate(indices):
+        for I, E in enumerate(slicer):
             NewDimension.append(self.__IndexRange[I] if E == -1 else 1)
 
         # Copying to a new multi-dimensional Array.
         NewArr = Array(tuple(NewDimension), self.__DefaultValue)
 
         def should_transfer(slicing, indices):
-            for E1, E2 in zip(slicing, indices):
-                if not(E1 == -1 or E2 == E1):
+            for E1, E2, I in zip(slicing, indices, range(len(indices))):
+                if E1 == -1:
+                    continue
+                if E1 != E2:
                     return False
             return True
 
         for I in self.__Map.keys():
-            if should_transfer(I):
-                NewArr.set_specific_element(self.get_specific_element(I))
+            if should_transfer(slicer, I):
+                I = tuple([(E2 if E1 == -1 else 0) for E1, E2 in zip(slicer, I)])  # Collapse that slice with -1
+                NewArr.set_specific_element(I, self.get_specific_element(I))
         return NewArr
 
 
@@ -114,9 +117,15 @@ class Array():
 
     def filter(self, fxn:Callable, mode = 0):
         """
-
+            filter out a sub array from this array, using a conditional function given as a parameter.
         :param fxn:
+            The conditional function used to filter out elements in the multi-dimension array.
+        :param mode:
+            if it's set to 0 then we are filtering by elements in the array, meaning that
+            the elements will be passed as a parameters into the function.
+            if it's set to 1, then it will be filtering by indices in the multidimensional array.
         :return:
+            In instance of the Array class.
         """
         pass  # TODO: IMPLEMENT THIS SHIT.
 
@@ -133,7 +142,7 @@ class Array():
             * Slicing the array with list of indices:
                 ??? TODO: DO THIS SHIT.
         :param item:
-            A Tuple of integers.
+            A Tuple of integers or None, other stuff is not allowed.
         :return:
             It really depends on the context.
         """
@@ -146,6 +155,7 @@ class Array():
         for I in range(len(item)):
             if item[I] is None:
                 item[I] = -1
+
         return self.slice(item)
 
     def __setitem__(self, key: Tuple[int], value):
@@ -181,9 +191,11 @@ def brief_test1():
 def brief_test2():
     print("Testing slicing the multidimensional array. ")
     arr = Array((3, 3, 3))
-    arr[0,0,0] = 0
     arr[1,1,1] = "fuck you"
-    print(arr)
+    print(f"arr_size{arr.size()}")
+    print(arr[1, -1, -1])
+
+
 
 def main():
     print("main method run")
