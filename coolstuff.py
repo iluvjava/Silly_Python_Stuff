@@ -68,7 +68,7 @@ class Array():
                 Let's say that the array "Arr" is 2d, m by n, then
                 indices: (-1, 3)
                 then it will slice (?, 3) and put then into an array with dimension (Arr.size()[0], 1)
-                which is basically the third column, but as a mx1 array.
+                which is basically the third column, but as a m by 1 array.
         :param indices:
             A list of tuple with dimension less than or equal to the dimension of the
             array.
@@ -77,7 +77,7 @@ class Array():
         """
         # check if the slicing index is valid:
         for I, E in enumerate(indices):
-            assert -1<=E<=self.__IndexRange[I], "Invalid index for slicing."
+            assert -1 <= E <= self.__IndexRange[I], "Invalid index for slicing."
 
         # Flatten the dimension from the slicing index:'
         NewDimension = []
@@ -85,30 +85,87 @@ class Array():
             NewDimension.append(self.__IndexRange[I] if E == -1 else 1)
 
         # Copying to a new multi-dimensional Array.
-        NewArr = Array(tuple(NewDimension))
+        NewArr = Array(tuple(NewDimension), self.__DefaultValue)
 
         def should_transfer(slicing, indices):
             for E1, E2 in zip(slicing, indices):
-                pass
+                if not(E1 == -1 or E2 == E1):
+                    return False
+            return True
 
+        for I in self.__Map.keys():
+            if should_transfer(I):
+                NewArr.set_specific_element(self.get_specific_element(I))
+        return NewArr
+
+
+    def collapse(self):
+        """
+            Collpase unecessary dimensions of the multi-dimension array.
+            e.g.
+                Say the array has dimension (1,100), then it will reduced to (100),
+                Which is just a 1d array.
+                Say the array has dimension (1,1,1), then it will reduced to (1), which is just a scaler.
+        :return:
+            None
+        """
 
         pass
 
-    def __getitem__(self, item:Tuple[int]):
-        if len(item) == self.__Dimension:
-            return self.get_specific_element(item)
-        # Client want a sub array.
-        raise Exception("Not Implemented yet")
+    def filter(self, fxn:Callable, mode = 0):
+        """
 
-    def __setitem__(self, key:Tuple[int], value):
+        :param fxn:
+        :return:
+        """
+        pass  # TODO: IMPLEMENT THIS SHIT.
+
+    def __getitem__(self, item: Tuple[int]):
+        """
+            * Getting an specific item from a specific index
+                e.g. (0,0)
+                    Return the element in the first row and first column.
+            * Slicing the array.
+                e.g. (None, 0)
+                    Return the first column as a n by 1 array.
+            * Slicing the array with a boolean function (Could be filering with tuples OR value of the tuples...):
+                ???? TODO: DO THIS SHIT
+            * Slicing the array with list of indices:
+                ??? TODO: DO THIS SHIT.
+        :param item:
+            A Tuple of integers.
+        :return:
+            It really depends on the context.
+        """
+        assert len(item) == self.__Dimension, f"Can't index a {self.size()} with the index {item}"
+
+        if -1 not in item:
+            return self.get_specific_element(item)
+
+        # Slicing the Array:
+        for I in range(len(item)):
+            if item[I] is None:
+                item[I] = -1
+        return self.slice(item)
+
+    def __setitem__(self, key: Tuple[int], value):
         if len(key) == self.__Dimension:
             self.set_specific_element(key, value)
             return
         raise Exception("Not Implemented yet")
 
-    def empty_array(self, *integers):
+    def empty_array(*integers):
+        """
+            A static method that construct the thing, with None in it.
+        :param integers:
+            Integers, the index ranges and dimension of the multi-dimension array.
+        :return:
+            An instance of the
+        """
         return Array(integers)
 
+    def __repr__(self):
+        return str(self.__Map)
 
 
 def brief_test1():
@@ -121,10 +178,17 @@ def brief_test1():
     print("brief_test1 END")
 
 
+def brief_test2():
+    print("Testing slicing the multidimensional array. ")
+    arr = Array((3, 3, 3))
+    arr[0,0,0] = 0
+    arr[1,1,1] = "fuck you"
+    print(arr)
 
 def main():
     print("main method run")
     brief_test1()
+    brief_test2()
     pass
 
 
