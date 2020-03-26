@@ -16,7 +16,7 @@ class Array():
         not a feature:
             * Indexing with negative integers.
     """
-    def __init__(self, Indexranges: Tuple[int], defaultvalue = None):
+    def __init__(self, Indexranges:Tuple[int], defaultvalue=None):
         """
 
         :param Indexranges:
@@ -97,10 +97,10 @@ class Array():
 
         for I in self.__Map.keys():
             if should_transfer(slicer, I):
-                I = tuple([(E2 if E1 == -1 else 0) for E1, E2 in zip(slicer, I)])  # Collapse that slice with -1
-                NewArr.set_specific_element(I, self.get_specific_element(I))
+                # Collapse that slice with -1
+                I_flatten = tuple([(E2 if E1 == -1 else 0) for E1, E2 in zip(slicer, I)])
+                NewArr.set_specific_element(I_flatten, self.get_specific_element(I))
         return NewArr
-
 
     def collapse(self):
         """
@@ -115,7 +115,7 @@ class Array():
 
         pass
 
-    def filter(self, fxn:Callable, mode = 0):
+    def filter(self, fxn:Callable, mode=0):
         """
             filter out a sub array from this array, using a conditional function given as a parameter.
         :param fxn:
@@ -127,22 +127,31 @@ class Array():
         :return:
             In instance of the Array class.
         """
-        pass  # TODO: IMPLEMENT THIS SHIT.
+        NewArr = Array(self.size())
+        if mode == 0 or 1:
+            for K, V in self.__Map.items():
+                if fxn(V if mode == 0 else K):
+                    NewArr[K] = V
+        return NewArr
 
-    def __getitem__(self, item: Tuple[int]):
+    def __getitem__(self, item: Tuple[Union[int, str, callable]]):
         """
             * Getting an specific item from a specific index
                 e.g. (0,0)
                     Return the element in the first row and first column.
             * Slicing the array.
-                e.g. (None, 0)
+                e.g. (-1, 0)
                     Return the first column as a n by 1 array.
-            * Slicing the array with a boolean function (Could be filering with tuples OR value of the tuples...):
+            * Slicing the array with a boolean function (Could be filter with tuples OR value of the tuples...):
                 ???? TODO: DO THIS SHIT
             * Slicing the array with list of indices:
                 ??? TODO: DO THIS SHIT.
         :param item:
-            A Tuple of integers or None, other stuff is not allowed.
+            * A Tuple of integers or None, other stuff is not allowed.
+
+            * Fxn filtering:
+                ["f1", fxn: callable]
+                using a given fxn to get the items you want, stored in a new array having the same size.
         :return:
             It really depends on the context.
         """
@@ -151,14 +160,10 @@ class Array():
         if -1 not in item:
             return self.get_specific_element(item)
 
-        # Slicing the Array:
-        for I in range(len(item)):
-            if item[I] is None:
-                item[I] = -1
-
         return self.slice(item)
 
-    def __setitem__(self, key: Tuple[int], value):
+    def __setitem__(self, key: Tuple[Union[int, str, callable]], value):
+
         if len(key) == self.__Dimension:
             self.set_specific_element(key, value)
             return
@@ -191,10 +196,19 @@ def brief_test1():
 def brief_test2():
     print("Testing slicing the multidimensional array. ")
     arr = Array((3, 3, 3))
-    arr[1,1,1] = "fuck you"
+    arr[1, 1, 1] = "fuck you"
     print(f"arr_size{arr.size()}")
     print(arr[1, -1, -1])
 
+    print("Self Mapping... ")
+    n = 5
+    arr = Array((n,n,n))
+    for I, J, K in [(i, j, k) for i in range(n) for j in range(n) for  k in range(n)]:
+        arr[I, J, K] = f"I:{I}, J:{J}, K:{K}"
+    print(f"arr_size({arr.size()})")
+    print(arr)
+    print("slicing with slicer [None, None, 3]")
+    print(arr[-1, -1, 3])
 
 
 def main():
