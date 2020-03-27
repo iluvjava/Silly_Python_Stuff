@@ -115,7 +115,7 @@ class Array():
 
         pass
 
-    def filter(self, fxn:Callable, mode=0):
+    def filter(self, fxn:Callable, mode=1):
         """
             filter out a sub array from this array, using a conditional function given as a parameter.
         :param fxn:
@@ -128,9 +128,9 @@ class Array():
             In instance of the Array class.
         """
         NewArr = Array(self.size())
-        if mode == 0 or 1:
+        if mode == 1 or 2:
             for K, V in self.__Map.items():
-                if fxn(V if mode == 0 else K):
+                if fxn(V if mode == 1 else K):
                     NewArr[K] = V
         return NewArr
 
@@ -143,9 +143,20 @@ class Array():
                 e.g. (-1, 0)
                     Return the first column as a n by 1 array.
             * Slicing the array with a boolean function (Could be filter with tuples OR value of the tuples...):
-                ???? TODO: DO THIS SHIT
+                e.g:
+                    ["f1", fxn: callable]
+                    The first element in the indexer specified that, function putting into the indexer is going
+                    to receive elements in the array.
+
+                    ["f2", fxn: callable]
+                    f2, this is setting that, the given callable function is going to receive a tuple: the index.
+
             * Slicing the array with list of indices:
-                ??? TODO: DO THIS SHIT.
+                Given a list of indices, and it will return a list of values.
+                    e.g:
+                    TODO: THIS IS HARD TO IMPLEMENT.
+            * Filtering out the elements in the array using the a list of indices matching the dimension of the array.
+                TODO: IMPLEMENTED THIS SHIT.
         :param item:
             * A Tuple of integers or None, other stuff is not allowed.
 
@@ -153,17 +164,19 @@ class Array():
                 ["f1", fxn: callable]
                 using a given fxn to get the items you want, stored in a new array having the same size.
         :return:
-            It really depends on the context.
+            It really depends on the context, but all returns a specific value in the array,
+            or an instance of the Array.
         """
-        assert len(item) == self.__Dimension, f"Can't index a {self.size()} with the index {item}"
+        if item[0] == "f1" or item[0] == "f2":  # User want to filter using custom callable function.
+            return self.filter(item[1], item[0][1])
 
+        # The dimension of the indexer should be the same as the one that instantiated the Array.
+        assert len(item) == self.__Dimension, f"Can't index a {self.size()} with the index {item}"
         if -1 not in item:
             return self.get_specific_element(item)
-
         return self.slice(item)
 
     def __setitem__(self, key: Tuple[Union[int, str, callable]], value):
-
         if len(key) == self.__Dimension:
             self.set_specific_element(key, value)
             return
@@ -175,7 +188,7 @@ class Array():
         :param integers:
             Integers, the index ranges and dimension of the multi-dimension array.
         :return:
-            An instance of the
+            An instance of the empty array with the given set of dimension.
         """
         return Array(integers)
 
@@ -202,7 +215,7 @@ def brief_test2():
 
     print("Self Mapping... ")
     n = 5
-    arr = Array((n,n,n))
+    arr = Array((n, n, n))
     for I, J, K in [(i, j, k) for i in range(n) for j in range(n) for  k in range(n)]:
         arr[I, J, K] = f"I:{I}, J:{J}, K:{K}"
     print(f"arr_size({arr.size()})")
