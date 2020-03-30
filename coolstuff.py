@@ -27,7 +27,7 @@ class Array():
         """
         for I in Indexranges:
             assert I > 0, "range of a certain dimension cannot be negative nor zero."
-        self.__DefaultValue = defaultvalue
+        self.__DefaultValue = defaultvalue  # believe me, this is necessary for faster copying of the array.
         self.__Dimension = len(Indexranges)
         self.__IndexRange = Indexranges
         self.__Map = {}
