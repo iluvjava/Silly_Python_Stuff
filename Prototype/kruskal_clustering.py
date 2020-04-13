@@ -20,7 +20,9 @@ class FullGraph:
         Vcount = len(points)
 
         self.Vcount = Vcount
-        self.V = dict(zip(range(Vcount), points)) # index |-> (x,y)
+
+        # index |-> (x,y)
+        self.V = dict(zip(range(Vcount), points))
         self.E = [] # (i, j, cost)
 
         for I in range(Vcount):
@@ -31,12 +33,11 @@ class FullGraph:
         self.E = sorted(self.E, key=lambda x: x[2])
         self.EChoose, self.MaxPartitionEvolve = self.__KruChoose()
 
-
     def __KruChoose(self):
         PartitionSize = dict(zip(range(self.Vcount), [1]*self.Vcount))
         ListofMaxPartitionSizes = []
         Echoose = []
-        Components = self.Vcount
+        # Components = self.Vcount
         ds = DisjointSet()
         for I, J, W in self.E:
             if ds.find(I) != ds.find(J):
@@ -63,6 +64,8 @@ class FullGraph:
         return s
 
 
+
+
 def dis(x, y):
     return math.sqrt(sum((a-b)**2 for a,b in zip(x, y)))
 
@@ -87,7 +90,6 @@ def NdimSpacialpointRnorm(paramList, sampleSize:int):
     def NormalDisOneDim(mean, sig, n):
         return np.random.normal(mean, sig, n)
     L = [NormalDisOneDim(mu, sig, sampleSize) for mu, sig in paramList]
-
     Res = [tuple([L[J][I] for J in range(len(paramList))]) for I in range(sampleSize)]
     return Res
 
@@ -103,7 +105,7 @@ def main():
     g = FullGraph(points)
     print(g.MaxPartitionEvolve)
 
-    points = SpacialPointGenerate((0,0,0), 100, 30) + SpacialPointGenerate((300,300,300), 100, 30)
+    points = SpacialPointGenerate((0, 0, 0), 100, 30) + SpacialPointGenerate((300, 300, 300), 100, 30)
     g = FullGraph(points)
     print(g.MaxPartitionEvolve)
 
@@ -115,7 +117,6 @@ def main():
     g = FullGraph(points)
     print(g.MaxPartitionEvolve)
 
-    pass
 
 
 if __name__ == "__main__":
