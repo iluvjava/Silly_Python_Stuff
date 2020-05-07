@@ -12,9 +12,9 @@ from Prototype.kruskal_clustering import FullGraph
 
 def main():
 
-    p1 = np.random.normal(0, 100, (100, 3))
-    p2 = np.random.normal(200, 100, (100, 3))
-    p3 = np.random.normal(400, 100, (100, 3))
+    p1 = np.random.normal(0, 100, (30, 3))
+    p2 = np.random.normal(300, 100, (30, 3))
+    p3 = np.random.normal(600, 100, (30, 3))
 
     points = np.append(p1, p2, axis=0)
     points = np.append(points, p3, axis=0)
@@ -59,8 +59,9 @@ def main():
 
 
     # Show the plot, save the animation, or save the figure
+    # anim.save("kruskal-clustering.mp4")
     plt.show()
-    anim.save("kruskal-clustering.mp4")
+
     #plt.savefig("kruskal-clustering.png")
 
 

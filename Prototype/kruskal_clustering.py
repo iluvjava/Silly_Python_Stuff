@@ -3,7 +3,7 @@
     algorithm for 2 normal distributions of special points.
 
     * Points are in at least dimension of 3.
-    * 2 normal distributions are resonably apart.
+    * 2 normal distributions are reasonably apart.
 """
 
 __all__ = ["NdimSpacialpointRnorm", "FullGraph"]
@@ -64,8 +64,6 @@ class FullGraph:
         return s
 
 
-
-
 def dis(x, y):
     return math.sqrt(sum((a-b)**2 for a,b in zip(x, y)))
 
@@ -116,7 +114,6 @@ def main():
     points = SpacialPointGenerate((0, 0, 0), 100, 30) + SpacialPointGenerate((100, 100, 100), 100, 30)
     g = FullGraph(points)
     print(g.MaxPartitionEvolve)
-
 
 
 if __name__ == "__main__":

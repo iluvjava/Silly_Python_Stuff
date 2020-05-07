@@ -32,11 +32,12 @@ def TryWiggle(II, S):
     VistiedIndicesInS = set()
 
     def IndexInRange(arr, index):
-        return 0 <= index < len(arr)
+        return 0 <= index and index < len(arr)
+
     def filterSingleRepeatition(indices):
         newindices = [indices[0]]
         for I in range(1, len(indices)):
-            if indices[I] - newindices[-1] == 1:
+            if indices[I] - indices[I - 1] == 1:
                 continue
             newindices.append(indices[I])
         return newindices
@@ -52,12 +53,15 @@ def TryWiggle(II, S):
 
     # right wiggle
     def wiggle(d):
-        RightTotalWiggle = 0
+        TotalWiggle = 0
         while(len(III) != 0):
+
             # If collided OR out of range, no right wiggle.
-            for I in III:
-                if I + d in VistiedIndicesInS or not IndexInRange(S, I + d):
+            temp = III.copy()
+            for I in temp:
+                if (I + d in VistiedIndicesInS) or (not IndexInRange(S, I + d)):
                     III.remove(I)
+            del temp
 
             # check right symbol, if unique, then no right wiggle.
             RightSymbols = {}
@@ -74,18 +78,20 @@ def TryWiggle(II, S):
             # right wiggle and mark visited.
             for I,V in enumerate(III):
                 VistiedIndicesInS.add(V + d)
-                AggregateSymbols[V - RightTotalWiggle] += S[V + d]
+                AggregateSymbols[V - TotalWiggle] += S[V + d]
                 III[I] += 1
 
-            RightTotalWiggle += 1
+            TotalWiggle += d
     wiggle(1)
     wiggle(-1)
 
     return VistiedIndicesInS, AggregateSymbols
 
+
 def GetRepeatedSubSequenceContaining(S, character: chr):
     _, res = TryWiggle([I for I, L in enumerate(S) if L == character], S)
     return res
+
 
 def main():
     S = "144133133144100"
@@ -96,6 +102,14 @@ def main():
 
     print("Cool, let's try some new shit. ")
 
+    print(GetRepeatedSubSequenceContaining("111212123123098765", '1'))
+    print(GetRepeatedSubSequenceContaining("111112222yuiyuiyuiopyuiyuiyuiopll", '1'))
+    print(GetRepeatedSubSequenceContaining("111112222yuiyuiyuiopyuiyuiyuiopll", 'y'))
+    print(GetRepeatedSubSequenceContaining("123123", '1'))
+    print(GetRepeatedSubSequenceContaining("1212123123123412341234512345123456123456", '1'))
+    print(GetRepeatedSubSequenceContaining("12121212", '1'))
+    print(GetRepeatedSubSequenceContaining("1212123", '1'))
+    print(GetRepeatedSubSequenceContaining("123 123123 123", '1')) # Nested repeated pattern
     pass
 
 
