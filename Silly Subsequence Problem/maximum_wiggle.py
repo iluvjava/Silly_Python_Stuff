@@ -40,7 +40,7 @@ def TryWiggle(II, S):
             if indices[I] - indices[I - 1] == 1:
                 continue
             newindices.append(indices[I])
-        return newindices
+        return indices
 
     III = II.copy()
     III = filterSingleRepeatition(III)
@@ -64,25 +64,28 @@ def TryWiggle(II, S):
             del temp
 
             # check right symbol, if unique, then no right wiggle.
-            RightSymbols = {}
+            AdjSymbols = {}
             for I in III:
-                if S[I + d] not in RightSymbols:
-                    RightSymbols[S[I + d]] = [I]
+                if S[I + d] not in AdjSymbols:
+                    AdjSymbols[S[I + d]] = [I]
                 else:
-                    RightSymbols[S[I + d]].append(I)
+                    AdjSymbols[S[I + d]].append(I)
 
-            for K in RightSymbols.keys():
-                if len(RightSymbols[K]) == 1:
-                    III.remove(RightSymbols[K][0])
+            for K in AdjSymbols.keys():
+                if len(AdjSymbols[K]) == 1:
+                    III.remove(AdjSymbols[K][0])
 
             # right wiggle and mark visited.
             for I,V in enumerate(III):
                 VistiedIndicesInS.add(V + d)
-                AggregateSymbols[V - TotalWiggle] += S[V + d]
-                III[I] += 1
+                AggregateSymbols[V - TotalWiggle] = AggregateSymbols[V - TotalWiggle] + S[V + d] if d == 1\
+                    else S[V + d] + AggregateSymbols[V - TotalWiggle]
+                III[I] += d
 
             TotalWiggle += d
+
     wiggle(1)
+    III = II.copy()
     wiggle(-1)
 
     return VistiedIndicesInS, AggregateSymbols
@@ -110,8 +113,17 @@ def main():
     print(GetRepeatedSubSequenceContaining("12121212", '1'))
     print(GetRepeatedSubSequenceContaining("1212123", '1'))
     print(GetRepeatedSubSequenceContaining("123 123123 123", '1')) # Nested repeated pattern
-    pass
+    print(GetRepeatedSubSequenceContaining("123321123321", '1'))  # Nested repeated pattern
 
+    print(GetRepeatedSubSequenceContaining("12121", '1'))  # Intersected Repeating Sequences
+
+    # Inverse
+    print(GetRepeatedSubSequenceContaining("321321", '1'))
+    print(GetRepeatedSubSequenceContaining("43214321", '1'))
+
+    print(GetRepeatedSubSequenceContaining("4321043210", '1'))
+
+    print(GetRepeatedSubSequenceContaining("78901234567890123456", '1'))
 
 if __name__ == "__main__":
     main()
