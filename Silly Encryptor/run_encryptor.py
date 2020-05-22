@@ -3,7 +3,7 @@
 from getpass import getpass
 import re as regex
 import os
-clear = lambda: os.system("cls")
+clear = lambda: 'cls' if os.name=='nt' else 'clear'
 
 import random as rd
 all = ["encode"]
@@ -16,6 +16,7 @@ def FilterString(s):
             filtered += C
     return filtered
 
+
 def Encode(ps, text, mode=True):
     encoded = ""
     rd.seed(ps)
@@ -24,10 +25,12 @@ def Encode(ps, text, mode=True):
             chr(32 + (-rd.randint(0, 94) + (ord(C) - 32))%95)
     return encoded
 
+
 def ParseInput(stringInput):
     s = stringInput.index("\"")
     t = stringInput.rindex("\"")
     return stringInput[s + 1:t], stringInput[-1] == "e"
+
 
 def GetPassWord():
     while True:
@@ -40,7 +43,6 @@ def GetPassWord():
             return ps1
         else:
             print("Pass word mismatched, try again please. ")
-
 
 
 def main():
