@@ -25,7 +25,7 @@ def print_BB(P):
     def solve_print_p(p):
         """ Print and returns the objective value"""
 
-        if (p.solve() == 1):
+        if (p.get_lp() == 1):
             print(f"{p.name} is solved: ")
             for I, V in enumerate(p.variables()):
                 print(f"x{I + 1} = {V.varValue}")
