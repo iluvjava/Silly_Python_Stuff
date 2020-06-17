@@ -53,7 +53,7 @@ class FullGraph2DPoints:
         :return:
             it self, but with the new point added.
         """
-        isinstance(other, Point)
+        assert isinstance(other, Point)
         if other in self.points:
             return
         n = len(self.points)
@@ -75,6 +75,7 @@ class FullGraph2DPoints:
         if type(item) == tuple:
             assert len(item) == 2, "Must index with 2 integers "
             return dis(self.points[item[0]], self.points[item[1]])
+
         return self.points[item]
 
     def get_edge_costs(self):
@@ -102,14 +103,14 @@ class TravelingSalesmanLP:
         LP Constraints:
 
             at each step we visit exactly one of the m vertex.
-            \sum_{j = 1}^n = 1   (x_{i, j})
+            \sum_{j = 1}^n (x_{i, j}) = 1
                 for 1 <= i <= m
 
             for all vertex, we visit it in only one time.
-            \sum_{i = 1}^m <= 1  (x_{i, j})
+            \sum_{i = 1}^m (x_{i, j}) <= 1
                 for 1 <= j <= n
 
-            We select edge e_{a, b} into our solution if and only if we vistied 'a'
+            We select edge e_{a, b} into our solution if and only if we visited 'a'
             vertex at step 'i' and b at step 'i + 1'
             e_{a, b} >= x_{i, a} + x_{i + 1, b} - e_{a, b}
                 for 1<= i <= m - 1
@@ -125,12 +126,15 @@ class TravelingSalesmanLP:
         self.path = None
         self.last_m = None # also tells if the problem has be solved or not.
 
+    def __warm_start_rand_path(self):
+        pass
+
     def get_lp(self, m = None):
         """
             Variables are going to be indexed from 0.
             Get an unsolved LP of the TSP problem.
         :param m:
-            The number of vertice want to travel within the path.
+            The number of vertex want to travel within the path.
         :return:
             The LP.
         """
@@ -270,7 +274,7 @@ def city_grid_points(width = 1, height = 1):
     pass
 
 def main():
-    Cities = unit_circle(8) + rand_points([0, 1], [1, 0], 8)
+    Cities = unit_circle(12) + rand_points([0, 1], [1, 0], 2)
     TSPProblem = TravelingSalesmanLP()
 
     for Point in Cities:
