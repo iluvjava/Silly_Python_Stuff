@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 def main():
     while True:
-        RandPoints = rand_points([0, 10], [10, 0], 30)
+        RandPoints = rand_points([0, 10], [10, 0], 12)
 
         plt.scatter([T.x for T in RandPoints], [T.y for T in RandPoints])
 
@@ -14,7 +14,7 @@ def main():
         for p in RandPoints:
             tlp += p
 
-        TspProblem = tlp.get_lp(5)
+        TspProblem = tlp.get_lp(10)
         TspProblem.solve()
         print(TspProblem.status)
 
