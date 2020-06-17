@@ -37,6 +37,29 @@ class FullGraph2D(SimpleDiGraph):
         return self
 
 
+class MinimumSpanningTreeLP:
+    """
+        n: |V|
+        e_{i, j}: 1 <= i < j <= n, if the edge is in the MST
+        x_{i}: 1 <= i <= n, if the vertex is in the MST
+        c(i, j): Cost function, all edges are assumed to be positive.
+
+        \sum_{i = 1}^n (x_i) = n // All index get used in the MST.
+
+        // an edge is in MST if and only if both edge of its vertices are in MST too.
+        for all 1 <= i < j <= n
+            x_i + x_j - e_{i, j} <= 1
+
+        // sum of the edges in MST:
+        \sum_{1 \leq i < j \leq n} e_{i, j} = n - 1
+
+        // Objective:
+        min sum_{1 \leq i < j \leq n} c(i, j)e_{i, j}
+    """
+
+    def __init__(self):
+        pass
+
 def rand_points(topLeft, bottomRight, n):
     """
 
