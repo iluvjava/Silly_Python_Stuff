@@ -1,5 +1,4 @@
-#   Some of the core stuff for the LP reduction of the MST problem.
-
+#   Miller Tucker Zemlin's Linear Programming Reduction of the Traveling Salesman Problem.
 import math as math
 import random as rnd
 from graph.simple_digraph import *
@@ -37,24 +36,19 @@ class FullGraph2D(SimpleDiGraph):
         return self
 
 
-class MinimumSpanningTreeLP:
+class TravelingSalesManLP:
     """
-        n: |V|
-        e_{i, j}: 1 <= i < j <= n, if the edge is in the MST
-        x_{i}: 1 <= i <= n, if the vertex is in the MST
-        c(i, j): Cost function, all edges are assumed to be positive.
+        This reduction has a polynomial number of constraints applied to the system, and it's formulated by
+        Miller Tucker Zemlin.
+        Here are the variable:
+            x_{i, j}: Going from city i to city j at some point during the tour.
+                * Binary
+                * Direction counts.
+            u_i: The step city i has been visited.
+                2 <= i <= n
+                u_i = t, then it means that city i is visted at t step of the tour.
+                0 <= u_i <= n - 1
 
-        \sum_{i = 1}^n (x_i) = n // All index get used in the MST.
-
-        // an edge is in MST if and only if both edge of its vertices are in MST too.
-        for all 1 <= i < j <= n
-            x_i + x_j - e_{i, j} <= 1
-
-        // sum of the edges in MST:
-        \sum_{1 \leq i < j \leq n} e_{i, j} = n - 1
-
-        // Objective:
-        min sum_{1 \leq i < j \leq n} c(i, j)e_{i, j}
     """
 
     def __init__(self):
