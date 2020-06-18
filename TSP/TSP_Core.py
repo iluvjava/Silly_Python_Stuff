@@ -195,7 +195,7 @@ class TravelingSalesmanLP:
         # fancy solve
         if mode == 1:
             print("Solver Type: " ,LpSolverDefault)
-            P.solve(PULP_CBC_CMD(msg=True, maxSeconds = 300, fracGap=0.2))
+            P.solve(solver=PULP_CBC_CMD(msg=True, maxSeconds = 300, fracGap=0.2))
         # not fancy solve.
         P.solve()
         self.status = P.status

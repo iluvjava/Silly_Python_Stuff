@@ -51,12 +51,26 @@ class TravelingSalesManLP(FullGraph2D):
                 0 <= u_i <= n - 1
 
     """
+    def __init__(self):
+        """
+
+        :param Granulerization:
+            A boolean option, if this is set to false, then the algorithm will use the shortest
+            distance between any 2 pair of points to measure distance to all other pairs,
+
+            Granularizing the distance between vertices might speed up???????
+
+        """
+        self._changes = False # True means that the problem has been changed.
+        self._solved = False
+        self._granular = False
+        self._path = None # Previously solved path
+        super().__init__()
 
     def formulate_lp(self):
-        if not self.__changes:
-            return
-        self.__changes == False # The formulation will address the changes.
+
         n = self.size()
+        assert n != 0, "The problem is empty."
         self.P = LpProblem(sense=LpMinimize)
         self.u = LpVariable.dict("u", range(1, n), cat=LpInteger, lowBound=0, upBound=n - 1)
         EdgeIndexList = [(I, J) for I in range(n) for J in range(n) if I != J]
@@ -80,11 +94,20 @@ class TravelingSalesManLP(FullGraph2D):
     def c(self, I, J):
         V1 = self[I]
         V2 = self[J]
+        if self._granular:
+            MinDis = min(self._E.values())
+            return dis(V1, V2)//MinDis
         return dis(V1, V2)
 
     def solve_path(self):
+        # Lazy Evalution address changes.
+        if (not self._changes) and (self._solved):
+            return self._path
+        self._changes = False # The formulation will address the changes.
+        self._solved = True
+
         self.formulate_lp()
-        status = self.P.solve(PULP_CBC_CMD(msg=True, fracGap=0.05, maxSeconds=300))
+        status = self.P.solve(solver=PULP_CBC_CMD(msg=True, fracGap=0.05, maxSeconds=300, mip_start=True))
         assert status == 1, f"LP status not good: {LpStatus[status]}"
         # Interpret solution, which is a path.
         Path = [0] # all vertex must be in the solution
@@ -95,6 +118,7 @@ class TravelingSalesManLP(FullGraph2D):
                 if self.x[I, J].varValue == 1:
                     Path.append(J)
                     break # optional.
+        self._path = Path
         return Path
 
     def plot_path(self):
@@ -108,14 +132,17 @@ class TravelingSalesManLP(FullGraph2D):
         pyplt.plot([self[V_n].x, self[V0].x], [self[V_n].y, self[V0].y], '--')
         pyplt.show()
 
-    def __init__(self):
-        self.__changes = False # True means that the problem has been changed.
-        super().__init__()
-
-
     def __iadd__(self, other):
-        self.__changes = True
+        self._changes = True
         return super().__iadd__(other)
+
+    def granular_on(self):
+        self._granular = True
+        self._changes = True
+
+    def granular_off(self):
+        self._granular = False
+        self._changes = True
 
 
 def rand_points(topLeft, bottomRight, n):
@@ -150,7 +177,6 @@ def main():
     print(FullG)
     print(FullG.solve_path())
     FullG.plot_path()
-
 
     pass
 
