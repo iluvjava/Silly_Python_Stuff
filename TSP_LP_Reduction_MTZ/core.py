@@ -160,6 +160,18 @@ def rand_points(topLeft, bottomRight, n):
         return  Point(x, y)
     return [randPointInSquare() for I in range(n)]
 
+def unit_circle(n = 10, r = 1):
+    """
+
+    :return:
+        Get points on a unit circle.
+    """
+    cos = math.cos
+    sin = math.sin
+    pi = math.pi
+    circle = [Point(r*cos((2*pi/n)*i), r*sin((2*pi/n)*i)) for i in range(n)]
+    return circle
+
 def dis(a, b):
     """
         Euclidean distance between 2 points.
