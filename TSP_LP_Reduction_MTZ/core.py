@@ -50,6 +50,12 @@ class TravelingSalesManLP(FullGraph2D):
                 u_i = t, then it means that city i is visted at t step of the tour.
                 0 <= u_i <= n - 1
 
+        Additional Features:
+        1. Greedy Coloring For forst solve
+        2. Warm start for solving after changes has been made...
+            * if the path is there, then each time a new added vertex will be included into
+            previous best solution.
+            * next time upon evalution, model will provides with this path for mid-starting the algorithm.
     """
     def __init__(self):
         """
@@ -62,15 +68,15 @@ class TravelingSalesManLP(FullGraph2D):
 
         """
         self._changes = False # True means that the problem has been changed.
-        self._solved = False
-        self._granular = False
-        self._path = None # Previously solved path
+        self._solved = False # true means it has solved it at the first time.
+        self._granular = False # APPROXIMATE/PRECISE distances between the vertices.
+        self._path = None # Previously solved path, None if previouly unsolve.
         super().__init__()
 
     def formulate_lp(self):
 
         n = self.size()
-        assert n != 0, "The problem is empty."
+        assert n >= 3, "The problem is too small."
         self.P = LpProblem(sense=LpMinimize)
         self.u = LpVariable.dict("u", range(1, n), cat=LpInteger, lowBound=0, upBound=n - 1)
         EdgeIndexList = [(I, J) for I in range(n) for J in range(n) if I != J]
