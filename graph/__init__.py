@@ -1,1 +1,1 @@
-__all__ = ["simple_digraph"]
+__all__ = ["simple_digraph", "point.py"]

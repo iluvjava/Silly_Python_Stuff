@@ -2,8 +2,13 @@
 __all__ = ["SimpleDiGraph"]
 from typing import *
 
-class SimpleDiGraph:
 
+class SimpleDiGraph:
+    """
+        A Generic simple digraph
+
+        you can only add edges and vertices to this graph.
+    """
     def __init__(self):
         self._V = {}  # Integer Index |-> Generic Vertex
         self._VInvert = {}  # Generic |-> Integer Index
@@ -12,7 +17,6 @@ class SimpleDiGraph:
 
     def __iadd__(self, vertex):
         """
-
         :param vertex:
             A generic Vertex.
         :return:
@@ -46,7 +50,13 @@ class SimpleDiGraph:
     def __getitem__(self, item):
         """
             Transform index to vertex and vice versa,
-            always query the keys for index first.
+
+            !! always query the keys for index first.
+
+            1. Given a tuple, it will return the meta information for the edge.
+            2. Given a vertex, or the integers representing the vertex, it will return the
+            vertex for the integer, or integer  for the vertex.
+
         :param item:
             Vertex of an integer index of a vertex.
         :return:
@@ -62,7 +72,8 @@ class SimpleDiGraph:
 
     def connect(self, v1, v2, edge=None):
         """
-            Add a neighbour for a vertex, new vertex could be completely new and that is ok.
+            Connect a directed edge going from v1 to v2.
+            v1 and v2 must already be added to the graph!
         :param v1:
             A vertex
         :param v2:
@@ -73,9 +84,32 @@ class SimpleDiGraph:
         self.connect_by_idx(self._VInvert[v1], self._VInvert[v2], edge)
 
     def connect_by_idx(self, v1, v2, edge=None):
+        """
+            Connect a directed edge going frog v1 to v2.
+            v1, v2 must be already presented in the graph.
+        :param v1:
+            A integer representation of the vertex.
+        :param v2:
+            A integer representation of the vertex.
+        :param edge:
+            The meta information you want to associate the edge with.
+        :return:
+            the graph itself.
+        """
         assert v1 in self._V.keys() and v2 in self._V.keys()
-        self._AdjLst[v1].add(v2)
-        self._E[v1, v2] = edge
+        if v2 not in self._AdjLst[v1]:
+            self._AdjLst[v1].add(v2)
+            self._E[v1, v2] = edge
+
+    def adj_vertices(self, Vidx):
+        """
+            Return the neighbouring vertices
+        :param Vidx:
+            The integer index representing the vertex.
+        :return:
+            A list of integers representing its neighbours.
+        """
+        return self._AdjLst[Vidx].copy()
 
     def __repr__(self):
         res = "Graph \n"
