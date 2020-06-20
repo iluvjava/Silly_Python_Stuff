@@ -70,7 +70,7 @@ class TravelingSalesManLP(FullGraph2D):
         self._changes = False # True means that the problem has been changed.
         self._solved = False # true means it has solved it at the first time.
         self._granular = False # APPROXIMATE/PRECISE distances between the vertices.
-        self._path = None # Previously solved path, None if previouly unsolve.
+        self._path = [] # Previously solved path, None if previouly unsolve.
         super().__init__()
 
     def formulate_lp(self):
@@ -80,10 +80,8 @@ class TravelingSalesManLP(FullGraph2D):
         self.P = LpProblem(sense=LpMinimize)
         self.u = LpVariable.dict("u", range(1, n), cat=LpInteger, lowBound=0, upBound=n - 1)
         EdgeIndexList = [(I, J) for I in range(n) for J in range(n) if I != J]
-        FirstIndexList, SecondIndexList = [], []
-        for I, J in EdgeIndexList:
-            FirstIndexList.append(I); SecondIndexList.append(J)
-        self.x = LpVariable.dict("x", (FirstIndexList, SecondIndexList), cat=LpBinary)
+
+        self.x = LpVariable.dict("x", (range(n), range(n)), cat=LpBinary)
         # number of Incoming edges in path is exactly 1.
         for J in range(n):
             self.P += lpSum([self.x[I, J] for I in range(n) if I != J]) == 1
@@ -106,6 +104,17 @@ class TravelingSalesManLP(FullGraph2D):
         return dis(V1, V2)
 
     def solve_path(self):
+        n = self.size()
+        assert n >= 3, "The problem is too small."
+        def warm_start(): # after formulating the LP
+            while self._path[0] != 0:
+                self._path.append(self._path.pop(0))
+            for I in range(1, n):
+                self.u[self._path[I]].setInitialValue(I - 1)
+            FeasiblePath = [(V1, V2) for V1, V2 in zip(self._path, self._path[1:] + [self._path[0]])]
+            for I, J in [(I, J) for I in range(n) for J in range(n) if I != J]:
+                self.x[I, J].setInitialValue(1 if (I, J) in FeasiblePath else 0)
+
         # Lazy Evalution address changes.
         if (not self._changes) and (self._solved):
             return self._path
@@ -113,11 +122,12 @@ class TravelingSalesManLP(FullGraph2D):
         self._solved = True
 
         self.formulate_lp()
+        warm_start()
         status = self.P.solve(solver=PULP_CBC_CMD(msg=True, fracGap=0.05, maxSeconds=300, mip_start=True))
         assert status == 1, f"LP status not good: {LpStatus[status]}"
         # Interpret solution, which is a path.
         Path = [0] # all vertex must be in the solution
-        n = self.size()
+
         while len(Path) != n:
             for J in range(n):
                 I = Path[-1]
@@ -139,8 +149,20 @@ class TravelingSalesManLP(FullGraph2D):
         pyplt.show()
 
     def __iadd__(self, other):
+        n = self.size()
+        super().__iadd__(other)
+        if n <= 2:
+            self._path.append(n)
+        else:
+            Closiest = float("+inf")
+            Iclose = -1
+            for I, V in enumerate(self._path):
+                if self.c(I, n) < Closiest:
+                    Closiest = self.c(I, n)
+                    Iclose = I
+            self._path.insert(Iclose, n)
         self._changes = True
-        return super().__iadd__(other)
+        return self
 
     def granular_on(self):
         self._granular = True
@@ -188,13 +210,20 @@ def dis(a, b):
     return math.sqrt((a.x - b.x)**2 + (a.y - b.y)**2)
 
 def main():
-    RandPoints = rand_points([0, 10], [10, 0], 30)
+    RandPoints = rand_points([0, 10], [10, 0], 10)
     FullG = TravelingSalesManLP()
     for P in RandPoints:
         FullG += P
-    print(FullG)
+        print(FullG._path)
+
     print(FullG.solve_path())
     FullG.plot_path()
+
+    for I in range(10):
+        for P in rand_points([0, 10], [10, 0], 3):
+            FullG += P
+        print(FullG.solve_path())
+        FullG.plot_path()
 
     pass
 
