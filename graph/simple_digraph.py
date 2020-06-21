@@ -8,6 +8,10 @@ class SimpleDiGraph:
         A Generic simple digraph
 
         you can only add edges and vertices to this graph.
+
+        * No self edge, no multiple edges.
+
+        * Undirected edges are modeled with 2 directional edges.
     """
     def __init__(self):
         self._V = {}  # Integer Index |-> Generic Vertex

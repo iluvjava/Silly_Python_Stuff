@@ -45,7 +45,6 @@ class TravelingSalesManLP(FullGraph2D):
     """
     def __init__(self):
         """
-
         :param Granulerization:
             A boolean option, if this is set to false, then the algorithm will use the shortest
             distance between any 2 pair of points to measure distance to all other pairs,
@@ -109,7 +108,7 @@ class TravelingSalesManLP(FullGraph2D):
 
         self.formulate_lp()
         warm_start()
-        status = self.P.solve(solver=PULP_CBC_CMD(msg=True, fracGap=0.05, maxSeconds=600, mip_start=True))
+        status = self.P.solve(solver=PULP_CBC_CMD(msg=True, fracGap=0.05, maxSeconds=3600, mip_start=True))
         assert status == 1, f"LP status not good: {LpStatus[status]}"
         # Interpret solution, which is a path.
         Path = [0] # all vertex must be in the solution
@@ -171,7 +170,7 @@ def main():
     FullG.plot_path()
 
     for I in range(10):
-        for P in rand_points([0, 10], [10, 0], 3):
+        for P in rand_points([0, 10], [10, 0], 1):
             FullG += P
         print(FullG.solve_path())
         FullG.plot_path()
@@ -179,7 +178,7 @@ def main():
     for P in rand_points([0, 10], [10, 0], 30):
         FullG += P
     print(FullG.solve_path())
-
+    FullG.plot_path()
     pass
 
 if __name__ == "__main__":
