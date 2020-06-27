@@ -28,11 +28,14 @@ class VertexColoring(SimpleDiGraph):
     * It keeps a greedy coloring solution, which serves as a warm-start
     for the simplex.
 
+    ! When connecting vertices to the graph, please do it for both
+    direction.
+
     """
 
     def __init__(self):
         super().__init__()
-        self._C = {} # Integer representing the vertex |-> Color assigned to the vertex.
+        # Integer representing the vertex |-> Color assigned to the vertex.
         self.__colorAssignment = None
         self.__solved = False
         self.__changes = False
@@ -48,6 +51,7 @@ class VertexColoring(SimpleDiGraph):
             return max(len(L) for L in self._AdjLst.values())
 
         n = self.size()
+        assert n <= 100, "Problem is kinda huge; another model is needed. "
         H = maxdeg() + 1 # Can be optimized better.
         self.P = LpProblem("Vertex_coloring_POP2Hybrid", sense=LpMinimize)
         self.y = LpVariable.dict("y", (range(H), range(n)), cat=LpBinary)
@@ -76,6 +80,13 @@ class VertexColoring(SimpleDiGraph):
 
         :return:
         """
+        def warm_start():
+            """
+                Interpret the color assignment and then initialize the variables.
+            :return:
+            """
+            pass
+
         if self.__solved and not self.__changes:
             return
         self.__solved = True
@@ -93,7 +104,6 @@ class VertexColoring(SimpleDiGraph):
                     break
         self.__colorAssignment = ColorAssignment
         return ColorAssignment
-
 
     def plot(self):
         """
@@ -136,6 +146,40 @@ class VertexColoring(SimpleDiGraph):
             res += f"{V}: {self.__colorAssignment[V]}\n"
         return res
 
+    def __iadd__(self, other):
+        """
+            Tries to maintains the optimal solution.
+            * By default, the 0th vertex has no color, represented by a color value of -1
+            * and the nth vertex has color n - 1
+        :param other:
+        :return:
+        """
+        n = self.size()
+        if n == 0:
+            self.__colorAssignment = {}
+            self.__colorAssignment[0] = -1
+        else:
+            self.__colorAssignment[n] = n # New added color has index of n.
+        return super(VertexColoring, self).__iadd__(other)
+
+    def connect_by_idx(self, v1, v2, edge=None):
+        """
+            This function will call the super class 2 times, so that it adds a undirected graph.
+        :param v1:
+            vertex 1
+        :param v2:
+            vertex 2
+        :param edge:
+            The generic edge value to associate with.
+        :return:
+            Nothing
+        """
+        super(VertexColoring, self).connect_by_idx(v1, v2, edge=None)
+        super(VertexColoring, self).connect_by_idx(v2, v1, edge=None)
+        # figure out the new coloring strategy...
+
+
+
 
 def unit_circle(n = 10, r = 1, offset = 0):
     """
@@ -173,16 +217,14 @@ def randomG(n, p):
                 continue # No self edge.
             if rnd.random() < p:
                 Gcoloring.connect_by_idx(J, I)
-                Gcoloring.connect_by_idx(I, J)
     return Gcoloring
 
 
 def main():
     print("Testing out the random graph generation: ")
-    RndG = randomG(30, 0.2)
+    RndG = randomG(12, 0.2)
     RndG.solve_color()
     RndG.plot()
-
 
 
 if __name__ == "__main__":

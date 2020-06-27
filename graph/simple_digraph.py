@@ -91,6 +91,8 @@ class SimpleDiGraph:
         """
             Connect a directed edge going frog v1 to v2.
             v1, v2 must be already presented in the graph.
+
+            * Repeating edges will be ignored after it's added the second time, it won't update the edge value. 
         :param v1:
             A integer representation of the vertex.
         :param v2:
