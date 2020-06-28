@@ -16,7 +16,7 @@
 from pulp import *
 from graph.simple_digraph import *
 from graph.point import *
-import matplotlib.pyplot as pyplt
+import matplotlib.pyplot as pyplt; pyplt.figure(num=None, figsize=(8, 6), dpi=450, facecolor='w', edgecolor='k')
 import random as rnd
 
 class VertexColoring(SimpleDiGraph):
@@ -39,20 +39,18 @@ class VertexColoring(SimpleDiGraph):
         self.__colorAssignment = None
         self.__solved = False
         self.__changes = False
-        pass
 
     def formulate_lp(self):
         """
             Formulation of the LP:
+
+            * POP2 Hybrid: Read more about this on the comment on the top of this file.
         :return:
             The formulated LP problem.
         """
-        def maxdeg():
-            return max(len(L) for L in self._AdjLst.values())
-
         n = self.size()
         assert n <= 100, "Problem is kinda huge; another model is needed. "
-        H = maxdeg() + 1 # Can be optimized better.
+        H = self.__greedy_assign_colors() + 1
         self.P = LpProblem("Vertex_coloring_POP2Hybrid", sense=LpMinimize)
         self.y = LpVariable.dict("y", (range(H), range(n)), cat=LpBinary)
         self.z = LpVariable.dict("z", (range(H), range(n)), cat=LpBinary)
@@ -72,6 +70,22 @@ class VertexColoring(SimpleDiGraph):
         for C in range(H):
             for U, V in self._E.keys():
                 self.P += self.x[C, V] + self.x[C, U] <= 1
+
+        def initialize_greedy_solution(H):
+            x, y, z = self.x, self.y, self.z
+            for V, C in self.__colorAssignment.items():
+                for I in range(C):
+                    y[I, V].setInitialValue(1)
+                    z[I, V].setInitialValue(0)
+                    x[C, V].setInitialValue(0)
+                for I in range(C + 1, H):
+                    y[I, V].setInitialValue(0)
+                    z[I, V].setInitialValue(1)
+                    x[C, V].setInitialValue(0)
+                x[C, V].setInitialValue(1)
+                z[C, V].setInitialValue(0)
+                y[C, V].setInitialValue(0)
+        initialize_greedy_solution(H)
         return self.P
 
     def solve_color(self):
@@ -80,12 +94,6 @@ class VertexColoring(SimpleDiGraph):
 
         :return:
         """
-        def warm_start():
-            """
-                Interpret the color assignment and then initialize the variables.
-            :return:
-            """
-            pass
 
         if self.__solved and not self.__changes:
             return
@@ -94,7 +102,7 @@ class VertexColoring(SimpleDiGraph):
 
         n = self.size()
         LP = self.formulate_lp()
-        status = LP.solve(PULP_CBC_CMD(msg = True, maxSeconds = 300, fracGap = 0.05))
+        status = LP.solve(PULP_CBC_CMD(msg = True, maxSeconds = 300, fracGap = 0.05, mip_start=True))
         assert status == 1, f"Status failed as: {LpStatus[status]}"
         ColorAssignment = {}
         for V in range(n):
@@ -178,7 +186,44 @@ class VertexColoring(SimpleDiGraph):
         super(VertexColoring, self).connect_by_idx(v2, v1, edge=None)
         # figure out the new coloring strategy...
 
+    def __greedy_assign_colors(self):
+        """
+            Precondition:
+                A valid coloring for the graph already exists.
 
+            * Assign colors on existing solution in a greedy manner.
+        :return:
+            The color of the vertex 0, which is supposed be 1 higher than
+            the color of all other vertices.
+        """
+        for U, Neighbors in self._AdjLst.items():
+            if U == 0: # This vertex is designed to have no color at all.
+                continue
+            ColorUsed = set()
+            for V in Neighbors:
+                ColorUsed.add(self.__colorAssignment[V])
+            MinUnusedColor = None
+            for Color in range(max(ColorUsed) + 2):
+                if Color not in ColorUsed:
+                    MinUnusedColor = Color
+                    break
+            self.__colorAssignment[U] = MinUnusedColor
+
+        self.__colorAssignment[0] = max(self.__colorAssignment.values()) + 1
+        assert self.__assert_color_assignment(), f"Faulty Color Assignment {self}"
+        return self.__colorAssignment[0]
+
+    def __assert_color_assignment(self):
+        """
+            Method will verifies the color assignments of the graph.
+        :return:
+            True: Good.
+            False: Bad.
+        """
+        for V1, V2 in self._E.keys():
+            if self.__colorAssignment[V1] == self.__colorAssignment[V2]:
+                return False
+        return True
 
 
 def unit_circle(n = 10, r = 1, offset = 0):
@@ -208,11 +253,11 @@ def randomG(n, p):
         The constructed random graph.
     """
     Gcoloring = VertexColoring()
-    Points = unit_circle(n, 10)
-    for P in Points:
+
+    for P in range(n):
         Gcoloring += P
-    for I in range(len(Points)):
-        for J in range(len(Points)):
+    for I in range(n):
+        for J in range(n):
             if I == J:
                 continue # No self edge.
             if rnd.random() < p:
@@ -222,7 +267,7 @@ def randomG(n, p):
 
 def main():
     print("Testing out the random graph generation: ")
-    RndG = randomG(12, 0.2)
+    RndG = randomG(30, 0.5)
     RndG.solve_color()
     RndG.plot()
 
