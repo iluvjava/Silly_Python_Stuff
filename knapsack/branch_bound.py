@@ -7,5 +7,8 @@
     So we will use Dynamic Programming and an Approximation algorithm.
 """
 
+from typing import *
 
 
+def napsack_dp(profits:List[int], weight:int):
+    pass
