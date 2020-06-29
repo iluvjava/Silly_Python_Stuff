@@ -10,5 +10,8 @@
 from typing import *
 
 
-def napsack_dp(profits:List[int], weight:int):
+def napsack_dp(profits:List[int], weights: List[int], maxWeight:int) -> List[int]:
+    assert min(profits) >= 0 and min(maxWeight) >= 0
+    T = [(w if w == weights[0] else float["-inf"]) for w in range(sum(maxWeight))]
+
     pass
