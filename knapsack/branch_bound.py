@@ -10,7 +10,7 @@
 from typing import *
 
 
-def knapsack_dp(profits:List[int], weights: List[int], maxWeight:int) -> List[int]:
+def knapsack_dp(profits:List[Union[float, int]], weights: List[int], maxWeight:int):
     assert len(profits) == len(weights), "weights and length must be in the same length. "
     assert min(profits) >= 0 and min(weights) >= 0,\
         "item profits and weight must be non-negative. "
@@ -34,10 +34,26 @@ def knapsack_dp(profits:List[int], weights: List[int], maxWeight:int) -> List[in
     return Soln[T.index(P_star)], P_star
 
 
+RealsLst = List[Union[float, int]]
+
+
+def knapsack_approx(profits: RealsLst, weights: RealsLst, maxWeight: RealsLst, epsilon=0.1):
+    assert len(profits) == len(weights), "weights and length must be in the same length. "
+    assert min(profits) >= 0 and min(weights) >= 0, \
+        "item profits and weight must be non-negative. "
+    assert sum([1 for W in weights if W > maxWeight]) == 0, \
+        "All items must be weights less than maxWeight to reduce redundancies"
+    Multiplier = len(profits)/(epsilon*max(weights))
+    maxWeight = int(Multiplier*maxWeight)
+    weights = [int(W*Multiplier + 1) for W in weights]
+    return knapsack_dp(profits, weights, maxWeight)
+
+
 def main():
     soln, OptimalVal = knapsack_dp(profits=[2, 3, 2, 1], weights=[6, 7, 4, 1], maxWeight=9)
     print(soln)
-
+    soln, OptimalVal = knapsack_approx(profits=[2, 3, 2, 1], weights=[6.01, 7.001, 4.02, 1.006], maxWeight=9)
+    print(soln)
     pass
 
 

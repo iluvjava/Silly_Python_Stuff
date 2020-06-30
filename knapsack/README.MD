@@ -22,7 +22,18 @@
 
 * Interpreting results: 
     * take max of `T[j, w]` for all possible w (sum of all weights)
+    
+### Approximation Algorithm ###
+
+* Inputs: in addition to the DP algorithm a new parameter `epsilon` in (0, 1) is added. 
 
 
- 
+#### ALGO ####
+* Scale profits such that `n/epsilon == max(weights)` is true, where n is the number of 
+    * This limits the size of the maximum weight, to a multiple of the numbers of items. 
+    * Scale the Maximum weight allowed by the same factor, keep the problem unchanged. 
+
+* Run up the weights for each items, this makes all the weights an over estimation, this will provide an lower bound on profits of the solution. 
+
+* Compute the solution based on the rounded... weights... 
  
