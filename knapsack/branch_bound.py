@@ -18,25 +18,26 @@ def knapsack_dp(profits:List[int], weights: List[int], maxWeight:int) -> List[in
         "All items must be weights less than maxWeight to reduce redundancies"
     T = [0]*maxWeight
     T[weights[0]] = profits[0]
-    Soln = [[0]*maxWeight for W in range(maxWeight)] # Store the characteristic vectors representing each solution.
+    Soln = [[] for W in range(maxWeight)] # Store the indices of item that sum up to that exact weight.
     Soln[weights[0]] = [1]
     for I in range(1, len(profits)):
         newT = [float("nan")]*len(T)
         for W in range(maxWeight):
-            NewProfits = T[W - weights[I]] +  profits[I] if  W - weights[I] >= 0 else float("-inf")
+            NewProfits = T[W - weights[I]] + profits[I] if  W - weights[I] >= 0 else float("-inf")
             if NewProfits > T[W]:
-                Soln[W].append(1)
+                Soln[W].append(I)
                 newT[W] = NewProfits
             else:
-                Soln[W].append(0)
                 newT[W] = T[W]
         T = newT
-    return Soln[T.index(max(T))]
+    P_star = max(T)
+    return Soln[T.index(P_star)], P_star
 
 
 def main():
-    soln = knapsack_dp(profits=[2, 3, 2, 1], weights=[6, 7, 4, 1], maxWeight=9)
+    soln, OptimalVal = knapsack_dp(profits=[2, 3, 2, 1], weights=[6, 7, 4, 1], maxWeight=9)
     print(soln)
+
     pass
 
 

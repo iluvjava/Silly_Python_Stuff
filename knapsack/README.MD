@@ -3,12 +3,14 @@
 ### inputs ###
 * Weights are positive.
 * profits are positive. 
+* All single item has a weight that is less than the maximum weight allowed. 
 
 ### ALGO ###
 * T[j, w] := the profits of items using sub array from 0 to j such that it sums up to weight of exactly w. 
 
 * The recurrence relation: 
     * `T[j + 1, w] := max(T[j, w - weight[j]] + profits[j + 1], T[j, w])`
+    * if `w - weight[j] < 0` then just ignore that case. 
     
 * Base cases: 
     * `T[0, 0] := 0`
