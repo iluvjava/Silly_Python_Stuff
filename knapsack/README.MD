@@ -32,8 +32,18 @@
 * Scale profits such that `n/epsilon == max(weights)` is true, where n is the number of 
     * This limits the size of the maximum weight, to a multiple of the numbers of items. 
     * Scale the Maximum weight allowed by the same factor, keep the problem unchanged. 
+    * Scaling to a multiple of n is purely for mathematical beauty. 
 
 * Run up the weights for each items, this makes all the weights an over estimation, this will provide an lower bound on profits of the solution. 
 
 * Compute the solution based on the rounded... weights... 
+
+
+## Branch and Bound and Lowerbound Heuristics ##
+* ![](img.png)
+* Tuple (I_f, I_0, I_1) where each item represents: 
+    * I_1: The solution we are definitely keeping. 
+    * I_0: ~~~ we are not keeping. 
+    * I_f: items we are still deciding. 
+
  
