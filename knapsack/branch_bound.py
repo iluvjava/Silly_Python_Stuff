@@ -6,7 +6,7 @@
 
     So we will use Dynamic Programming and an Approximation algorithm.
 """
-
+__all__ = ["knapsack_dp", "knapsack_approx"]
 from typing import *
 
 
@@ -33,11 +33,28 @@ def knapsack_dp(profits:List[Union[float, int]], weights: List[int], maxWeight:i
     P_star = max(T)
     return Soln[T.index(P_star)], P_star
 
+Reals = Union[float, int]
+RealsLst = List[Reals]
 
-RealsLst = List[Union[float, int]]
 
-
-def knapsack_approx(profits: RealsLst, weights: RealsLst, maxWeight: RealsLst, epsilon=0.1):
+def knapsack_approx(
+        profits: RealsLst,
+        weights: RealsLst,
+        maxWeight: Reals,
+        epsilon=0.1,
+        **kwargs):
+    """
+    :param profits:
+    :param weights:
+    :param maxWeight:
+    :param epsilon:
+        Sensitivity, run-time is inversely proportional to this value. The smaller the value, the better the
+        approximation.
+    :param kwargs:
+        roundUp: set the value to any thing so the algorithm will produce a solution that is
+        an upper bound, by default it will give a solution that only a lower bound.
+    :return:
+    """
     assert len(profits) == len(weights), "weights and length must be in the same length. "
     assert min(profits) >= 0 and min(weights) >= 0, \
         "item profits and weight must be non-negative. "
@@ -45,7 +62,8 @@ def knapsack_approx(profits: RealsLst, weights: RealsLst, maxWeight: RealsLst, e
         "All items must be weights less than maxWeight to reduce redundancies"
     Multiplier = len(profits)/(epsilon*max(weights))
     maxWeight = int(Multiplier*maxWeight)
-    weights = [int(W*Multiplier + 1) for W in weights]
+    weights = [(int(W*Multiplier + 1) if "roundUp" not in kwargs.keys() else int(W*Multiplier))\
+               for W in weights]
     return knapsack_dp(profits, weights, maxWeight)
 
 
