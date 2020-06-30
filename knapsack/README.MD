@@ -8,7 +8,7 @@
 * T[j, w] := the profits of items using sub array from 0 to j such that it sums up to weight of exactly w. 
 
 * The recurrence relation: 
-    * `T[j + 1, w] := min(T[j, w - weight[j]], T[j, w])`
+    * `T[j + 1, w] := max(T[j, w - weight[j]] + profits[j + 1], T[j, w])`
     
 * Base cases: 
     * `T[0, 0] := 0`
