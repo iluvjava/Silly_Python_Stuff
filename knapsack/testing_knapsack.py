@@ -39,7 +39,7 @@ def main():
         return optimals, Times
 
     # printing out the reports.
-    trials, n = 20, 100
+    trials, n = 20, 200
     Results, Times = bench_mark(trials, n)
     OptimalExact, OptimalApprox = [I[0] for I in Results], [I[1] for I in Results]
     ExactTime, ApproxTime = [I[0] for I in Times], [I[1] for I in Times]
