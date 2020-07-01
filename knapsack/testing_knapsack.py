@@ -38,28 +38,34 @@ def main():
             Times.append((Tp1, Tp2))
         return optimals, Times
 
-    # printing out the reports.
-    trials, n = 20, 200
-    Results, Times = bench_mark(trials, n)
-    OptimalExact, OptimalApprox = [I[0] for I in Results], [I[1] for I in Results]
-    ExactTime, ApproxTime = [I[0] for I in Times], [I[1] for I in Times]
-    print("Stats for Optimal Exact: ")
-    print(f"mean: {stat.mean(OptimalExact)}")
-    print(f"stdev: {stat.stdev(OptimalExact)}")
-    print()
-    print("Stats for Time Exact: ")
-    print(f"mean: {stat.mean(ExactTime)}")
-    print(f"stdev: {stat.stdev(ExactTime)}")
-    print()
-    print("Stats for Optimal Approx: ")
-    print(f"mean: {stat.mean(OptimalApprox)}")
-    print(f"stdev: {stat.stdev(OptimalApprox)}")
-    print()
-    print("Stats for Approx time: ")
-    print(f"mean: {stat.mean(ApproxTime)}")
-    print(f"stdev: {stat.stdev(ApproxTime)}")
-    print()
-    print(f"Number of trials is: {trials}")
+    def test1():
+        # printing out the reports.
+        trials, n = 20, 200
+        Results, Times = bench_mark(trials, n)
+        OptimalExact, OptimalApprox = [I[0] for I in Results], [I[1] for I in Results]
+        ExactTime, ApproxTime = [I[0] for I in Times], [I[1] for I in Times]
+        print("Stats for Optimal Exact: ")
+        print(f"mean: {stat.mean(OptimalExact)}")
+        print(f"stdev: {stat.stdev(OptimalExact)}")
+        print()
+        print("Stats for Time Exact: ")
+        print(f"mean: {stat.mean(ExactTime)}")
+        print(f"stdev: {stat.stdev(ExactTime)}")
+        print()
+        print("Stats for Optimal Approx: ")
+        print(f"mean: {stat.mean(OptimalApprox)}")
+        print(f"stdev: {stat.stdev(OptimalApprox)}")
+        print()
+        print("Stats for Approx time: ")
+        print(f"mean: {stat.mean(ApproxTime)}")
+        print(f"stdev: {stat.stdev(ApproxTime)}")
+        print()
+        print(f"Number of trials is: {trials}")
+
+    def upperbound():
+        # Approx, Feasibility checks.
+
+        pass
 
 
 if __name__ == "__main__":

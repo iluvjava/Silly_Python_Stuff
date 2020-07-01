@@ -22,7 +22,10 @@
 
 * Interpreting results: 
     * take max of `T[j, w]` for all possible w (sum of all weights)
-    
+### Duality ###
+* The above algorithm is the primal formulation of the problem, and there is a dual formulation of the same probolem which can be solved with dynamic programming. 
+
+
 ### Approximation Algorithm ###
 
 * Inputs: in addition to the DP algorithm a new parameter `epsilon` in (0, 1) is added. 
@@ -50,6 +53,7 @@
 * (6) Current choice of I_free and I_1 has an upper bound lower than global optimal, reject all I_free. 
 * (7) `S_tilda` improves upper bound and feasible, mark that as current optimal. 
 * (8) branch and bound, by neglecting/considering any random element from the `I_free` set. 
-
+### Run-time ###
+* Exponential for Pathological Inputs. 
 
  
