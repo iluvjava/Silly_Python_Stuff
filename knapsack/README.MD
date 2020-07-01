@@ -29,17 +29,17 @@
 
 
 #### ALGO ####
-* Scale profits such that `n/epsilon == max(weights)` is true, where n is the number of 
+* Scale all numbers in the weights constraint using the multiplier: `log(w_max)/w_max` where w_max is the item with the maximum weights. 
     * This limits the size of the maximum weight, to a multiple of the numbers of items. 
     * Scale the Maximum weight allowed by the same factor, keep the problem unchanged. 
     * Scaling to a multiple of n is purely for mathematical beauty. 
 
-* Round up the weights for each items, this makes all the weights an over estimation, this will provide an lower bound on profits of the solution. Round down will provide an upper bound for the solution.  
+* Round up the weights for each items, this makes all the weights an over estimation, this will provide an lower bound on profits of the solution. Round down the weights will provide an upper bound for the solution. 
 
 * Compute the solution based on the rounded... weights... 
 
 
-## Branch and Bound and Lower bound/upper Bound Heuristics ##
+## Branch and Bound and Lower/Upper Bound Bound Heuristics ##
 ![](img.png)
 * Tuple `(I_f, I_0, I_1)` where each item represents: 
     * `I_1`: The solution we are definitely keeping. 
@@ -49,7 +49,7 @@
 * (5) `S_tilda`: This is the solution where items in `I_free` is approximated (upper bound), and items in `I_1` is computed exactly.
 * (6) Current choice of I_free and I_1 has an upper bound lower than global optimal, reject all I_free. 
 * (7) `S_tilda` improves upper bound and feasible, mark that as current optimal. 
-* (8) branch and bound, by neglecting/considering any random element frim the `I_free` set. 
+* (8) branch and bound, by neglecting/considering any random element from the `I_free` set. 
 
 
  

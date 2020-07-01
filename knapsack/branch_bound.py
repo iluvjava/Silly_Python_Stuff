@@ -8,6 +8,7 @@
 """
 __all__ = ["knapsack_dp", "knapsack_approx"]
 from typing import *
+import math
 
 
 def knapsack_dp(profits:List[Union[float, int]], weights: List[int], maxWeight:int):
@@ -60,7 +61,8 @@ def knapsack_approx(
         "item profits and weight must be non-negative. "
     assert sum([1 for W in weights if W > maxWeight]) == 0, \
         "All items must be weights less than maxWeight to reduce redundancies"
-    Multiplier = len(profits)/(epsilon*max(weights))
+    WeightMax = max(weights)
+    Multiplier = math.log2(WeightMax)/WeightMax # This scales all weights
     maxWeight = int(Multiplier*maxWeight)
     weights = [(int(W*Multiplier + 1) if "roundUp" not in kwargs.keys() else int(W*Multiplier))\
                for W in weights]
