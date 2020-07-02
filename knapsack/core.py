@@ -107,14 +107,21 @@ class Knapsack:
     def fractional_approx(self):
         """
             Allowing fractional item, estimate the upper bound for the problem.
+
+            * The solution will have a loser bound than integral dual approx, however, I didn't prove if it's always the
+            case, it depend on epsilon and the inputs.
+
         :return:
             The optimal value as the upper bound, and the fractional solution.
         """
 
         pass
 
-    def integral_dual_approx(self):
+    def dual_approx(self):
         """
+            * Gives an integral solution that is feasible, together with an estimated upperbound for the true optimal
+            using this set of items.
+
             Scale the profits and make them into integers.
             * Solution is feasible
             * Optimal >= (1-epsilon)OPT; where OPT is the true optimal value with non-integer profits.
@@ -129,13 +136,33 @@ class Knapsack:
 
         return Soln, Opt/(1 - eps)
 
+    def primal_approx_upper(self):
+        """
+            Get a integral solution that may or may not be feasible, if it's infeasible, then it's an upper bound, else it's the
+            optimal solution.
+
+        :return:
+            solution, optimal value.
+        """
+        return
+
+    def primal_approx_lower(self):
+        """
+            Get an integral solution really fast, it's feasible.
+
+            The approx solution can be arbitrarily bad for pathological inputs.
+        :return:
+            Solution, optimal value.
+        """
+        return
+
     @property
     def epsilon(self):
         return self.epsilon
 
     @epsilon.setter
     def epsilon(self, eps):
-        assert 0 < eps < 1, "Epislon out of range. "
+        assert 0 < eps < 1, "Epsilon out of range. "
         self.epsilon = eps
 
 def main():
