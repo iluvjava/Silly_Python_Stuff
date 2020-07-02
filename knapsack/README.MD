@@ -22,11 +22,17 @@
 
 * Interpreting results: 
     * take max of `T[j, w]` for all possible w (sum of all weights)
+
 ### Duality ###
-* The above algorithm is the primal formulation of the problem, and there is a dual formulation of the same probolem which can be solved with dynamic programming. 
+* The above algorithm is the primal formulation of the problem, and there is a dual formulation of the same problem which can be solved with dynamic programming. 
+* The alternative gives another kind of upper bound for the algorithm.
+* Definition: 
+    * `T[j, p]:` the minimum amount of weights such that it gives exactly a profits of c.  
+* Recurrences: 
+    * `T[j, p] := min(T[j - 1, p - p_j] + w_j, T[j - 1, p])`
+ 
 
-
-### Approximation Algorithm ###
+### Approximation Algorithm for Both Formulations ###
 
 * Inputs: in addition to the DP algorithm a new parameter `epsilon` in (0, 1) is added. 
 
@@ -40,6 +46,11 @@
 * Round up the weights for each items, this makes all the weights an over estimation, this will provide an lower bound on profits of the solution. Round down the weights will provide an upper bound for the solution. 
 
 * Compute the solution based on the rounded... weights... 
+* ! This algorithm is arbitrarily bad, (Consider weights of 1, 1/2, 1/4, 1/8...), if it's off by a tiny round up decimal, then the profits can drop by 50% in this case. 
+* Complexity: `O(N log(w_max))`, it's pretty efficient. 
+
+### Dual's ALGO ###
+* However, the dual problem gives an algorithm which produces precise lower bound, upper bound too. 
 
 
 ## Branch and Bound and Lower/Upper Bound Bound Heuristics ##
@@ -53,6 +64,7 @@
 * (6) Current choice of I_free and I_1 has an upper bound lower than global optimal, reject all I_free. 
 * (7) `S_tilda` improves upper bound and feasible, mark that as current optimal. 
 * (8) branch and bound, by neglecting/considering any random element from the `I_free` set. 
+
 ### Run-time ###
 * Exponential for Pathological Inputs. 
 
