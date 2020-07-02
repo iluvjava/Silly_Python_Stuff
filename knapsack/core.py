@@ -119,7 +119,7 @@ class Knapsack:
         Solution, TotalProfits, RemainingBudget = [], 0, B
         for _, Index in M:
             ItemW, ItemP = W[Index], P[Index]
-
+            
 
         pass
 
