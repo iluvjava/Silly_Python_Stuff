@@ -23,7 +23,7 @@ def knapsack_dp_dual(
     :param Budget:
         The maximum amount of budget allowed for the item's weight.
     :return:
-        The set of indices representing the solution.
+        The set of indices representing the solution, and the optimal value of the solution.
     """
     assert len(profits) == len(weights), "weights and length must be in the same length. "
     assert min(profits) >= 0 and min(weights) >= 0, \
@@ -45,12 +45,12 @@ def knapsack_dp_dual(
             else:
                 newT[P] = T[P]
         T = newT
-    Res = [P for P in range(len(T)) if T[P] <= Budget][-1] # Index of the highest feasible profits.
-    return Soln[Res]
+    Res = Soln[[P for P in range(len(T)) if T[P] <= Budget][-1]] # Index of the highest feasible profits.
+    return Res, sum(profits[I] for I in Res)
 
 
 def knapsack_dp_primal(
-        profits: List[Union[float, int]],
+        profits: List[RealNumber],
         weights: List[int],
         Budget: int):
     """
@@ -108,18 +108,26 @@ class Knapsack:
         """
             Allowing fractional item, estimate the upper bound for the problem.
         :return:
-            The optimal value as the upper bound.
+            The optimal value as the upper bound, and the fractional solution.
         """
 
         pass
 
-    def integral_profits_approx(self):
+    def integral_dual_approx(self):
         """
             Scale the profits and make them into integers.
+            * Solution is feasible
             * Optimal >= (1-epsilon)OPT; where OPT is the true optimal value with non-integer profits.
+            * Polynomial run-time.
         :return:
+            A integral solution that marks a lowerbound, and a number representing the upper bound.
         """
-        pass
+        P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
+        Scale = len(P)/(eps*max(P))
+        ScaledProfits = [int(Profit*Scale) for Profit in P]
+        Soln, Opt = knapsack_dp_dual(ScaledProfits, W, B)
+
+        return Soln, Opt/(1 - eps)
 
     @property
     def epsilon(self):

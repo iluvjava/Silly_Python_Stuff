@@ -61,6 +61,7 @@
 * Then it's mathematically proven that the solution found, say `P_tilda`, is going to be `P_tilda >= (1-epsilon)*P_star`, where `P_star` is the optimal value on the solution with unscaled profits. 
 * The complexity is `O(n^3/epislon)`. `O(n*p_sum)`, and the `p_sum <=p_max*n= n^2/epsilon`, then `O(n^3/epislon)` is the complexity of the algorithm. 
 * If, n/epsilon is approximately the absolute optimal value, then the complexity becomes quadratic. 
+* ! The upper bound is not the sum of exact profits on all the items in the solution, is `P_tailda/(1-epsilon)`, where the value `P_tilda` is the sum of rounded profits on the approximated solution. 
 
 #### Integer Programming Approx ####
 * Solving the problem as a linear programming problem will give an aboslute upper bound for all integers solutions for a given problem. This is the losest we can get, and the solution will be a set of fractions amount of items (exactly one of the item will have a fraction for it)
@@ -81,7 +82,6 @@
 
 ### Run-Time ###
 * Exponential for Pathological Inputs. 
-
 
 ### Branch & Bound Approx 2 ###
 * S* = Fraction_Approx(c, w, b) // approximate the solution with linear programming. 
