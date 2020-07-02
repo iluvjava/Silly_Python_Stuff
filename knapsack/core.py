@@ -110,10 +110,16 @@ class Knapsack:
 
             * The solution will have a loser bound than integral dual approx, however, I didn't prove if it's always the
             case, it depend on epsilon and the inputs.
-
         :return:
             The optimal value as the upper bound, and the fractional solution.
         """
+        P, W, B = self.__p, self.__w, self.__b  # Profits, weights, and budget.
+        # tuples, first element is the value, second element is the index of the item.
+        M = ([(P[I]/W[I], I) for I in range(len(P))]).sort(key=(lambda x: x[0]), reverse=True)
+        Solution, TotalProfits, RemainingBudget = [], 0, B
+        for _, Index in M:
+            ItemW, ItemP = W[Index], P[Index]
+
 
         pass
 
@@ -133,7 +139,6 @@ class Knapsack:
         Scale = len(P)/(eps*max(P))
         ScaledProfits = [int(Profit*Scale) for Profit in P]
         Soln, Opt = knapsack_dp_dual(ScaledProfits, W, B)
-
         return Soln, Opt/(1 - eps)
 
     def primal_approx_upper(self):
