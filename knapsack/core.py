@@ -223,17 +223,23 @@ class Knapsack:
             Optimality can be arbitarily bad.
 
         :param moreInfo:
-            If this is set to true, then it will return 1 to indicate the the error is confidently within
-            epsilon, if Zero is returned, then it will indicate that the this solution has optimal value
+            If this is set to true, then it will return "True" to indicate the the error is confidently within
+            epsilon, if "False" is returned, then it will indicate that the this solution has optimal value
             less than (1-epsilon)*P_star, where P_sar is the absolute optimal.
         :return:
             The optimal solution and it's optimal value.
         """
         Soln1, Opt1, FracSlack = self.fractional_approx(moreInfo=True)
+        OptLowerThreshold = Opt1*(1 - self.__epsilon)
         Opt1 = (1-FracSlack)*Opt1
         Soln2, Opt2 = self.dual_approx()  # super fast
+
         if Opt1 > Opt2:
+            if moreInfo:
+                return [I for I, V in Soln1.items() if Soln1[I] == 1], Opt1, Opt1 > OptLowerThreshold
             return [I for I, V in Soln1.items() if Soln1[I] == 1], Opt1
+        if moreInfo:
+            return Soln2, Opt2, Opt2 > OptLowerThreshold
         return Soln2, Opt2
 
     def approx_best(self):
@@ -243,7 +249,10 @@ class Knapsack:
         :return:
             The optimal solution and its optimal value.
         """
-        pass
+        Soln, Opt, Confidence = self.approx_fastest(moreInfo=True)
+        if not Confidence:
+            Soln, Opt = self.dual_approx(superFast=False)
+        return Soln, Opt
 
 
 

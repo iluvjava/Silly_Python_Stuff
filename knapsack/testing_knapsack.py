@@ -96,6 +96,10 @@ def main():
             Instance = Knapsack(p, w, m)
             return Instance.approx_fastest()
 
+        def approx_best(p, w, m):
+            Instance = Knapsack(p, w, m)
+            return Instance.approx_best()
+
         def approx_dual(p, w, m):
             Instance = Knapsack(p, w, m)
             return Instance.dual_approx()
@@ -103,7 +107,7 @@ def main():
         def exact(p, w, m):
             return knapsack_dp_primal(p, w, m)
 
-        N, n = 10, 60
+        N, n = 10, 1000
 
         ProblemsList = []
         for I in range(N):
@@ -111,12 +115,13 @@ def main():
         Optimal1, Times1 = bench_mark_by(ProblemsList, approx_fast)
         Optimal2, Times2 = bench_mark_by(ProblemsList, approx_dual)
         Optimal3, Times3 = bench_mark_by(ProblemsList, exact)
+        Optimal4, Times4 = bench_mark_by(ProblemsList, approx_best)
 
         CsvData = [None]*N
         for I in range(N):
             Row = {}
-            Row["approx_fast"], Row["approx_dual"], Row["exact"] = Optimal1[I], Optimal2[I], Optimal3[I]
-            Row["appox_fast_time"], Row["approx_dual_time"], Row["exact_time"] = Times1[I], Times2[I], Times3[I]
+            Row["approx_fast"], Row["approx_dual"], Row["exact"], Row["approx_best"] = Optimal1[I], Optimal2[I], Optimal3[I], Optimal4[I]
+            Row["appox_fast_time"], Row["approx_dual_time"], Row["exact_time"], Row["approx_best_time"] = Times1[I], Times2[I], Times3[I], Times4[I]
             CsvData[I] = Row
 
         with open(fileName, mode="w") as CsvDataFile:
