@@ -66,6 +66,10 @@
 #### Integer Programming Approx ####
 * Solving the problem as a linear programming problem will give an aboslute upper bound for all integers solutions for a given problem. This is the losest we can get, and the solution will be a set of fractions amount of items (exactly one of the item will have a fraction for it)
 * Rank all items by `profits/weight`, choose until the last item that doesn't fit, and then we take fractional amount of the item to keep the solution feasible, which is the last item we can choose. 
+* A Pathological Inputs: 
+    * For all item, it's weight is just over a half of the budget we have, and the profit of each item is extremely close to each other. 
+    * This is a problem because there will be 2 item chosen at most for all solution, then the total profits will be approximately the sum of profits of the 2 items, which 2x the profits of the actualy optimal solution, giving us a very loose upper bound in the worst case. 
+    
 
 
 ## Branch and Bound and Lower/Upper Bound Bound Heuristics ##

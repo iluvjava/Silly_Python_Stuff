@@ -215,7 +215,6 @@ def main():
     def test_frac_approx():
         K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
         print(K.fractional_approx())
-
     test_frac_approx()
 
 
