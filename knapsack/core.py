@@ -7,7 +7,7 @@
 
 from typing import *
 RealNumber = Union[float, int]
-
+import math
 
 def knapsack_dp_dual(
         profits: List[int],
@@ -156,27 +156,35 @@ class Knapsack:
         :return:
             solution, optimal value.
         """
-        return
+        return self.__primal_approx(mode=1)
 
     def __primal_approx(self, mode):
         """
-            Internal use,
+            Internal use.
         :param mode:
             1: Over estimation; 2: Under estimation.
         :return:
-            The integral solution of the approx.
+            The integral solution of the approx, the objective value of the solution.
         """
-        return
+        weights, maxWeight, profits, epsilon = self.__w, self.__b, self.__p, self.__epsilon
+        WeightMax = max(weights)
+        Multiplier = math.log2(WeightMax) / (WeightMax * epsilon)  # This scales all weights
+        MaxWeightModified = int(Multiplier * maxWeight)
+        ScaledWeights = [(int(W * Multiplier) + 1 if mode == 0 else int(W * Multiplier))\
+                         for W in weights]
+        Soln, objectiveValue = knapsack_dp_primal(profits, ScaledWeights, MaxWeightModified)
+        return Soln, objectiveValue
 
     def primal_approx_lower(self):
         """
             Get an integral solution really fast, it's feasible.
 
             The approx solution can be arbitrarily bad for pathological inputs.
+
         :return:
             Solution, optimal value.
         """
-        return
+        return self.__primal_approx(mode = 2)
 
     @property
     def epsilon(self):
