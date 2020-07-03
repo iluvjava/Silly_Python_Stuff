@@ -107,7 +107,7 @@ def main():
         def exact(p, w, m):
             return knapsack_dp_primal(p, w, m)
 
-        N, n = 10, 1000
+        N, n = 10, 200
 
         ProblemsList = []
         for I in range(N):

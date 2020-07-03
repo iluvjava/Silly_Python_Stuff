@@ -27,7 +27,7 @@
 * The above algorithm is the primal formulation of the problem, and there is a dual formulation of the same problem which can be solved with dynamic programming. 
 * The alternative gives another kind of upper bound for the algorithm.
 * Definition: 
-    * `T[j, p]:` the minimum amount of weights such that it gives exactly a profits of c.  
+    * `T[j, p]:` the minimum amount of weights such that it gives exactly a profits of p.  
 * Recurrences: 
     * `T[j, p] := min(T[j - 1, p - p_j] + w_j, T[j - 1, p])`
     

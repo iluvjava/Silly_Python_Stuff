@@ -10,6 +10,7 @@ from typing import *
 RealNumber = Union[float, int]
 import math
 
+
 def knapsack_dp_dual(
         profits: List[int],
         weights: List[RealNumber],
@@ -17,12 +18,15 @@ def knapsack_dp_dual(
     """
             The dual formulation of the knapsack problem, minimizing the weights used for
             a certain profits.
+
     :param profits:
         All profits of items are non-negative, and must be an integers.
     :param weights:
         All weights of items are non negative, can be real numbers.
     :param budget:
         The maximum amount of budget allowed for the item's weight.
+    :param profitsUpper:
+        Don't mess with this variable, it's for the knapsack class.
     :return:
         The set of indices representing the solution, and the optimal value of the solution.
     """
@@ -32,7 +36,7 @@ def knapsack_dp_dual(
     assert sum([1 for W in weights if W > budget]) == 0, \
         "All items must be weights less than maxWeight to reduce redundancies"
 
-    TotalProfits, TotalWeights = sum(profits), sum(weights)
+    TotalProfits = int(knapsack_greedy(profits, weights, budget)) + 1
     T = [float("+inf")] * (TotalProfits + 1)
     T[0] = 0
     Soln = [[] for P in range(TotalProfits + 1)]  # Store the indices of item that sum up to that exact profits
@@ -73,6 +77,7 @@ def knapsack_dp_primal(
         "item profits and weight must be non-negative. "
     assert sum([1 for W in weights if W > Budget]) == 0,\
         "All items must be weights less than maxWeight to reduce redundancies"
+
     T = [0] * (Budget + 1)
     Soln = [[] for W in range(Budget + 1)] # Store the indices of item that sum up to that exact weight.
     for I in range(len(profits)):
@@ -88,6 +93,28 @@ def knapsack_dp_primal(
     P_star = max(T)
     return Soln[T.index(P_star)], P_star
 
+
+def knapsack_greedy(profits, weights, budget):
+    assert len(profits) == len(weights), "weights and length must be in the same length. "
+    assert min(profits) >= 0 and min(weights) >= 0, \
+        "item profits and weight must be non-negative. "
+    assert sum([1 for W in weights if W > budget]) == 0, \
+        "All items must be weights less than maxWeight to reduce redundancies"
+
+    M = [(profits[I] / weights[I], I) if weights[I] > 0 else (float("+inf"), I) for I in range(len(profits))]
+    M.sort(key=(lambda x: x[0]), reverse=True)
+    Solution, TotalProfits, RemainingBudget = {}, 0, budget  # solution: index |-> (0, 1]
+    for _, Index in M:
+        ItemW, ItemP = weights[Index], profits[Index]
+        if RemainingBudget - ItemW <= 0:
+            Solution[Index] = RemainingBudget / ItemW
+            TotalProfits += ItemP * (RemainingBudget / ItemW)
+            RemainingBudget = 0
+            break
+        RemainingBudget -= ItemW;
+        TotalProfits += ItemP
+        Solution[Index] = 1
+    return TotalProfits
 
 class Knapsack:
     """
@@ -151,8 +178,12 @@ class Knapsack:
             * Gives an integral solution that is feasible, together with an estimated upperbound for the true optimal
             using this set of items.
 
-            Scale the profits and make them into integers.
+            Scale the profits and make them into integers. It will try to minimize the scaling factor, it will seek
+            for an scale such that each scaled profits are at least 1 away from each, (So all different profits lies
+            in their own integer slots. )
+
             * Polynomial run-time.
+
         :param superFast:
             This make things runs super fast, but it can't give you an upper bound for the optimal solution.
             * The solution it returns can get arbitrarily bad, but most of the time it's OK.
@@ -162,6 +193,8 @@ class Knapsack:
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
         N = len(P)
         OptUpperBound = self.fractional_approx()[1]
+        def best_scaling():
+
         Scale = N/(eps*max(P)) if not superFast else OptUpperBound/max(P)
         ScaledProfits = [int(Profit*Scale) for Profit in P]
         Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
@@ -280,8 +313,6 @@ def main():
         print(K.fractional_approx())
         print(K.dual_approx())
     test_frac_approx()
-
-
 
 
 if __name__ == "__main__":
