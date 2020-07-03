@@ -19,10 +19,10 @@ import csv
 def main():
 
     def rand_problem(N:int):
-        weights = [int(rnd()*(N/2)) for I in range(N)]
+        weights = [int(rnd()*N) for I in range(N)]
         profits = [rnd() for I in range(N)]
-        MaxWeights = int(0.7*(sum(weights)))
-        return weights, profits, MaxWeights
+        MaxWeights = int(0.5*(sum(weights)))
+        return profits, weights, MaxWeights
 
     def bench_mark(N: int, n):
         optimals = []
@@ -39,23 +39,22 @@ def main():
             Times.append((Tp1, Tp2))
         return optimals, Times
 
-    def bench_mark_by(N:int, n: int, knapsackrunner:callable):
+    def bench_mark_by(problems, knapsackrunner:callable):
         """
 
-        :param N:
-            Trials
-        :param n:
-            problem size.
+        :param problems:
+            A list of problems, each problem is tuple of 3 numbers.
+            [(P1, W1, B1), (P2, W2, B2),...]
         :param knapsackrunner:
-            Taking in parameters:
-                profits, weights, Maxweights
+            A testing function to run on the list of inputs.
         :return:
+            A tuple, both are list. List of optimal values and time for each
+            instance in the list of problem.
         """
         Optimals, Times = [], []
-        for I in range(N):
-            Weights, Profits, MaxWeights = rand_problem(n)
+        for P, W, B in problems:
             Tm = time()
-            _, Opt = knapsackrunner(Profits, Weights, MaxWeights)
+            _, Opt = knapsackrunner(P, W, B)
             Tp1 = time() - Tm
             Times.append(Tp1)
             Optimals.append(Opt)
@@ -98,10 +97,14 @@ def main():
         def exact(p, w, m):
             return knapsack_dp_primal(p, w, m)
 
-        N, n = 100, 50
-        Optimal1, Times1 = bench_mark_by(N, n, approx_frac)
-        Optimal2, Times2 = bench_mark_by(N, n, approx_dual)
-        Optimal3, Times3 = bench_mark_by(N, n, exact)
+        N, n = 10, 100
+
+        ProblemsList = []
+        for I in range(N):
+            ProblemsList.append(rand_problem(n))
+        Optimal1, Times1 = bench_mark_by(ProblemsList, approx_frac)
+        Optimal2, Times2 = bench_mark_by(ProblemsList, approx_dual)
+        Optimal3, Times3 = bench_mark_by(ProblemsList, exact)
 
         CsvData = [None]*N
         for I in range(N):
@@ -111,7 +114,7 @@ def main():
             CsvData[I] = Row
 
         with open("test_datafile.csv", mode="w") as CsvDataFile:
-            writer = csv.DictWriter(CsvDataFile, fieldnames=list(CsvDataFile[0].keys()))
+            writer = csv.DictWriter(CsvDataFile, fieldnames=list(CsvData[0].keys()))
             writer.writeheader()
             writer.writerows(CsvData)
 

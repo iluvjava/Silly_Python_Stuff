@@ -35,19 +35,22 @@ def knapsack_dp_dual(
     TotalProfits, TotalWeights = sum(profits), sum(weights)
     T = [float("+inf")] * (TotalProfits + 1)
     T[0] = 0
-    Soln = [[] for W in range(TotalWeights + 1)] # Store the indices of item that sum up to that exact profits
+    Soln = [[] for P in range(TotalProfits + 1)]  # Store the indices of item that sum up to that exact profits
     for I in range(len(profits)):
         newT = [float("nan")]*len(T)
+        SolnCopied = [S.copy() for S in Soln]
         for P in range(len(T)):
             NewWeight = T[P - profits[I]] + weights[I] if P - profits[I] >= 0 else float("inf")
             if NewWeight < T[P]:
-                Soln[NewWeight] += Soln[NewWeight - weights[I]] + [I]
+                SolnCopied[P] = Soln[P - profits[I]] + [I]
                 newT[P] = NewWeight
             else:
                 newT[P] = T[P]
+        Soln = SolnCopied
         T = newT
-    Res = Soln[[T[I] for I in range(len(T)) if T[I] <= budget][-1]]  # Index of the highest feasible profits.
-    return Res, sum(profits[I] for I in Res)
+    BestFeasibleProfit = [I for I in range(len(T)) if T[I] <= budget][-1]
+    Res = Soln[BestFeasibleProfit]  # Index of the highest feasible profits.
+    return Res, BestFeasibleProfit
 
 
 def knapsack_dp_primal(
@@ -83,7 +86,7 @@ def knapsack_dp_primal(
                 newT[W] = T[W]
         T = newT
     P_star = max(T)
-    return Soln[T.index(P_star)]
+    return Soln[T.index(P_star)], P_star
 
 
 class Knapsack:
@@ -118,14 +121,14 @@ class Knapsack:
         """
         P, W, B = self.__p, self.__w, self.__b  # Profits, weights, and budget.
         # tuples, first element is the value, second element is the index of the item.
-        M = [(P[I]/W[I], I) for I in range(len(P))]
+        M = [(P[I]/W[I], I) if W[I] > 0 else (float("+inf"), I) for I in range(len(P))]
         M.sort(key=(lambda x: x[0]), reverse=True)
         Solution, TotalProfits, RemainingBudget = {}, 0, B # solution: index |-> (0, 1]
         for _, Index in M:
             ItemW, ItemP = W[Index], P[Index]
-            if RemainingBudget - ItemW < 0:
+            if RemainingBudget - ItemW <= 0:
                 Solution[Index] = RemainingBudget/ItemW
-                TotalProfits += ItemP; RemainingBudget = 0
+                TotalProfits += ItemP*(RemainingBudget/ItemW); RemainingBudget = 0
                 break
             RemainingBudget -= ItemW; TotalProfits += ItemP
             Solution[Index] = 1
@@ -146,14 +149,14 @@ class Knapsack:
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
         Scale = len(P)/(eps*max(P))
         ScaledProfits = [int(Profit*Scale) for Profit in P]
-        Soln, Opt = knapsack_dp_dual(ScaledProfits, W, B)
+        Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
+        Opt = sum(P[I] for I in Soln)
         return Soln, Opt/(1 - eps)
 
     def primal_approx_upper(self):
         """
-            Get a integral solution that may or may not be feasible, if it's infeasible, then it's an upper bound, else it's the
-            optimal solution.
-
+            Get a integral solution that may or may not be feasible, if it's infeasible, then it's an upper bound, else
+            it's the optimal solution.
         :return:
             solution, optimal value.
         """
@@ -203,6 +206,7 @@ def main():
     def test_frac_approx():
         K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
         print(K.fractional_approx())
+
     test_frac_approx()
 
 
