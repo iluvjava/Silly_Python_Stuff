@@ -109,12 +109,19 @@ class Knapsack:
         assert sum(1 for W in w if W > b) == 0, "All items must have weight less than the budget allowed, no redundancies. "
         assert min(w) >= 0 and min(p) >= 0, "All weights and profits must be positive. "
 
-    def fractional_approx(self):
+    def fractional_approx(self, moreInfo = False):
         """
             Allowing fractional item, estimate the upper bound for the problem.
 
             * The solution will have a loser bound than integral dual approx, however, I didn't prove if it's always the
             case, it depend on epsilon and the inputs.
+
+            * Returns the amount of profits from the fractional item. This will indicate how lose te upper bound is.
+            It's going to be between 0, and 1/2, 0 means the solution is integral, and it's the global optimal, and if
+            it's 1/2, then it means the upper bound is really lose.
+        :param moreInfo:
+            True: then it will return one additional parameter telling how good the upper bound is.
+            False: It won't return the fractional item's profits.
         :return:
             The optimal value as the upper bound, and the optimal value of the solution, in the format of:
             Solution, TotalProfits.
@@ -124,17 +131,19 @@ class Knapsack:
         M = [(P[I]/W[I], I) if W[I] > 0 else (float("+inf"), I) for I in range(len(P))]
         M.sort(key=(lambda x: x[0]), reverse=True)
         Solution, TotalProfits, RemainingBudget = {}, 0, B # solution: index |-> (0, 1]
+        FractionalProfits = None
         for _, Index in M:
             ItemW, ItemP = W[Index], P[Index]
             if RemainingBudget - ItemW <= 0:
                 Solution[Index] = RemainingBudget/ItemW
-                TotalProfits += ItemP*(RemainingBudget/ItemW); RemainingBudget = 0
+                FractionalProfits = ItemP*(RemainingBudget/ItemW)
+                TotalProfits += FractionalProfits; RemainingBudget = 0
                 break
             RemainingBudget -= ItemW; TotalProfits += ItemP
             Solution[Index] = 1
-        return Solution, TotalProfits
+        return (Solution, TotalProfits) if not moreInfo else (Solution, TotalProfits, FractionalProfits/TotalProfits)
 
-    def dual_approx(self):
+    def dual_approx(self, superFast=True):
         """
             * Gives an integral solution that is feasible, together with an estimated upperbound for the true optimal
             using this set of items.
@@ -147,7 +156,7 @@ class Knapsack:
             A integral solution that marks a lowerbound, and a number representing the upper bound.
         """
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
-        Scale = len(P)/(eps*max(P))
+        Scale = len(P)/(eps*max(P)) if not superFast else self.fractional_approx()[1]/max(P)
         ScaledProfits = [int(Profit*Scale) for Profit in P]
         Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
         Opt = sum(P[I] for I in Soln)
@@ -196,7 +205,7 @@ class Knapsack:
     @epsilon.setter
     def epsilon(self, eps):
         assert 0 < eps < 1, "Epsilon out of range. "
-        self.epsilon = eps
+        self.__epsilon = eps
 
 def main():
 

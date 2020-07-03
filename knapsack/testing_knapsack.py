@@ -18,17 +18,23 @@ import csv
 
 def main():
 
-    def rand_problem(N:int):
+    def rand_problem_dense(N:int):
         weights = [int(rnd()*N) for I in range(N)]
         profits = [rnd() for I in range(N)]
         MaxWeights = int(0.5*(sum(weights)))
+        return profits, weights, MaxWeights
+
+    def rand_problem_sparse(N:int):
+        weights = [int(rnd()*N) + N for I in range(N)]
+        profits = [rnd() for I in range(N)]
+        MaxWeights = int(2*stat.median(weights))
         return profits, weights, MaxWeights
 
     def bench_mark(N: int, n):
         optimals = []
         Times = []
         for I in range(N):
-            weights, profits, MaxWeights = rand_problem(n)
+            weights, profits, MaxWeights = rand_problem_dense(n)
             Tm = time()
             _, OptExact = knapsack_dp(profits, weights, MaxWeights)
             Tp1 = time() - Tm
@@ -84,7 +90,7 @@ def main():
         print()
         print(f"Number of trials is: {trials}")
 
-    def test_knapsack_class():
+    def test_knapsack_class(problemFxn:callable, fileName:str):
 
         def approx_frac(p, w, m):
             Instance = Knapsack(p, w, m)
@@ -92,16 +98,16 @@ def main():
 
         def approx_dual(p, w, m):
             Instance = Knapsack(p, w, m)
-            return Instance.dual_approx()
+            return Instance.dual_approx(superFast=True)
 
         def exact(p, w, m):
             return knapsack_dp_primal(p, w, m)
 
-        N, n = 10, 100
+        N, n = 30, 100
 
         ProblemsList = []
         for I in range(N):
-            ProblemsList.append(rand_problem(n))
+            ProblemsList.append(problemFxn(n))
         Optimal1, Times1 = bench_mark_by(ProblemsList, approx_frac)
         Optimal2, Times2 = bench_mark_by(ProblemsList, approx_dual)
         Optimal3, Times3 = bench_mark_by(ProblemsList, exact)
@@ -113,13 +119,13 @@ def main():
             Row["appox_frac_time"], Row["approx_dual_time"], Row["exact_time"] = Times1[I], Times2[I], Times3[I]
             CsvData[I] = Row
 
-        with open("test_datafile.csv", mode="w") as CsvDataFile:
+        with open(fileName, mode="w") as CsvDataFile:
             writer = csv.DictWriter(CsvDataFile, fieldnames=list(CsvData[0].keys()))
             writer.writeheader()
             writer.writerows(CsvData)
 
-
-    test_knapsack_class()
+    test_knapsack_class(rand_problem_dense, fileName="test_data_dense_knapsac.csv")
+    test_knapsack_class(rand_problem_sparse, fileName="test_data_sparse_knapsac.csv")
 
 
 
