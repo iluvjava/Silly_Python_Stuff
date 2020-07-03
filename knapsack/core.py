@@ -109,9 +109,9 @@ class Knapsack:
         assert sum(1 for W in w if W > b) == 0, "All items must have weight less than the budget allowed, no redundancies. "
         assert min(w) >= 0 and min(p) >= 0, "All weights and profits must be positive. "
 
-    def fractional_approx(self, moreInfo = False):
+    def fractional_approx(self, moreInfo=False):
         """
-            Allowing fractional item, estimate the upper bound for the problem.
+            Allowing fractional item, estimate the upper bound for the problem (Greedy Algorithm)
 
             * The solution will have a loser bound than integral dual approx, however, I didn't prove if it's always the
             case, it depend on epsilon and the inputs.
@@ -125,6 +125,9 @@ class Knapsack:
         :return:
             The optimal value as the upper bound, and the optimal value of the solution, in the format of:
             Solution, TotalProfits.
+
+            The solution is a map, mapping the index of the item to the fractional value of that item which is being
+            taken.
         """
         P, W, B = self.__p, self.__w, self.__b  # Profits, weights, and budget.
         # tuples, first element is the value, second element is the index of the item.
@@ -149,18 +152,21 @@ class Knapsack:
             using this set of items.
 
             Scale the profits and make them into integers.
-            * Solution is feasible
-            * Optimal >= (1-epsilon)OPT; where OPT is the true optimal value with non-integer profits.
             * Polynomial run-time.
+        :param superFast:
+            This make things runs super fast, but it can't give you an upper bound for the optimal solution.
+            * The solution it returns can get arbitrarily bad, but most of the time it's OK.
         :return:
-            A integral solution that marks a lowerbound, and a number representing the upper bound.
+            An Integral solution that is definitely feasible, and its optimal value.
         """
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
-        Scale = len(P)/(eps*max(P)) if not superFast else self.fractional_approx()[1]/max(P)
+        N = len(P)
+        OptUpperBound = self.fractional_approx()[1]
+        Scale = N/(eps*max(P)) if not superFast else OptUpperBound/max(P)
         ScaledProfits = [int(Profit*Scale) for Profit in P]
         Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
         Opt = sum(P[I] for I in Soln)
-        return Soln, Opt/(1 - eps)
+        return Soln, Opt
 
     def primal_approx_upper(self):
         """
@@ -198,6 +204,49 @@ class Knapsack:
         """
         return self.__primal_approx(mode = 2)
 
+    def upper_bound_tightiest(self):
+        """
+            Gives the tightest upper bound without bruteforcing.
+
+            The sense of optimality is given by the value of epsilon.
+        :return:
+            The upper bound, no solution will be returned.
+        """
+
+        pass
+
+    def approx_fastest(self, moreInfo=False):
+        """
+            Analyze the problem intelligently, and then according to the problem, tailor a feasible solution
+            in the faster way possible.
+
+            Optimality can be arbitarily bad.
+
+        :param moreInfo:
+            If this is set to true, then it will return 1 to indicate the the error is confidently within
+            epsilon, if Zero is returned, then it will indicate that the this solution has optimal value
+            less than (1-epsilon)*P_star, where P_sar is the absolute optimal.
+        :return:
+            The optimal solution and it's optimal value.
+        """
+        Soln1, Opt1, FracSlack = self.fractional_approx(moreInfo=True)
+        Opt1 = (1-FracSlack)*Opt1
+        Soln2, Opt2 = self.dual_approx()  # super fast
+        if Opt1 > Opt2:
+            return [I for I, V in Soln1.items() if Soln1[I] == 1], Opt1
+        return Soln2, Opt2
+
+    def approx_best(self):
+        """
+            Give the best feasible solution that definitely is at least (1 - epsilon)*P_star where P_star is the
+            absolute optimal of the solution.
+        :return:
+            The optimal solution and its optimal value.
+        """
+        pass
+
+
+
     @property
     def epsilon(self):
         return self.epsilon
@@ -206,6 +255,7 @@ class Knapsack:
     def epsilon(self, eps):
         assert 0 < eps < 1, "Epsilon out of range. "
         self.__epsilon = eps
+
 
 def Branch_and_bound():
     pass
@@ -219,6 +269,7 @@ def main():
     def test_frac_approx():
         K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
         print(K.fractional_approx())
+        print(K.dual_approx())
     test_frac_approx()
 
 
