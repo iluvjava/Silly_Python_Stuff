@@ -102,7 +102,7 @@ class Knapsack:
 
     def __preconditions(self, p, w, b):
         assert len(p) == len(w), "Length of list of weight must equal to the length of list of profits. "
-        assert sum(1 for W in w if W > b), "All items must have weight less than the budget allowed, no redundancies. "
+        assert sum(1 for W in w if W > b) == 0, "All items must have weight less than the budget allowed, no redundancies. "
         assert min(w) >= 0 and min(p) >= 0, "All weights and profits must be positive. "
 
     def fractional_approx(self):
@@ -117,7 +117,8 @@ class Knapsack:
         """
         P, W, B = self.__p, self.__w, self.__b  # Profits, weights, and budget.
         # tuples, first element is the value, second element is the index of the item.
-        M = ([(P[I]/W[I], I) for I in range(len(P))]).sort(key=(lambda x: x[0]), reverse=True)
+        M = [(P[I]/W[I], I) for I in range(len(P))]
+        M.sort(key=(lambda x: x[0]), reverse=True)
         Solution, TotalProfits, RemainingBudget = {}, 0, B # solution: index |-> (0, 1]
         for _, Index in M:
             ItemW, ItemP = W[Index], P[Index]
@@ -165,6 +166,7 @@ class Knapsack:
         :return:
             The integral solution of the approx.
         """
+        return
 
     def primal_approx_lower(self):
         """
@@ -190,9 +192,11 @@ def main():
     print(knapsack_dp_primal([2, 3, 2, 1], [6, 7, 4, 1], 9))
 
     def test_frac_approx():
-        pass
+        K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
+        print(K.fractional_approx())
+    test_frac_approx()
 
-    pass
+
 
 
 if __name__ == "__main__":
