@@ -10,7 +10,7 @@
 """
 
 from random import random as rnd
-from knapsack.branch_bound import *
+from knapsack.scratch_paper_works import *
 import statistics as stat
 from time import time
 from knapsack.core import *

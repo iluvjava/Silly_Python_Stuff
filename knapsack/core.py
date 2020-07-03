@@ -207,6 +207,10 @@ class Knapsack:
         assert 0 < eps < 1, "Epsilon out of range. "
         self.__epsilon = eps
 
+def Branch_and_bound():
+    pass
+
+
 def main():
 
     print(knapsack_dp_dual([2, 3, 2, 1], [6, 7, 4, 1], 9))

@@ -69,7 +69,8 @@
 * A Pathological Inputs: 
     * For all item, it's weight is just over a half of the budget we have, and the profit of each item is extremely close to each other. 
     * This is a problem because there will be 2 item chosen at most for all solution, then the total profits will be approximately the sum of profits of the 2 items, which 2x the profits of the actualy optimal solution, giving us a very loose upper bound in the worst case. 
-    
+* Using fractional item's profits as a indication of how loose the upper bound is. 
+    * This is important and we can swtich the approximation algorithm when this number gets big. 
 
 
 ## Branch and Bound and Lower/Upper Bound Bound Heuristics ##
