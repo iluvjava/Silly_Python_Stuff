@@ -13,7 +13,8 @@ from random import random as rnd
 from knapsack.branch_bound import *
 import statistics as stat
 from time import time
-
+from knapsack.core import *
+import csv
 
 def main():
 
@@ -37,6 +38,28 @@ def main():
             optimals.append((OptExact, OptApprox))
             Times.append((Tp1, Tp2))
         return optimals, Times
+
+    def bench_mark_by(N:int, n: int, knapsackrunner:callable):
+        """
+
+        :param N:
+            Trials
+        :param n:
+            problem size.
+        :param knapsackrunner:
+            Taking in parameters:
+                profits, weights, Maxweights
+        :return:
+        """
+        Optimals, Times = [], []
+        for I in range(N):
+            Weights, Profits, MaxWeights = rand_problem(n)
+            Tm = time()
+            _, Opt = knapsackrunner(Profits, Weights, MaxWeights)
+            Tp1 = time() - Tm
+            Times.append(Tp1)
+            Optimals.append(Opt)
+        return Optimals, Times
 
     def test1():
         # printing out the reports.
@@ -62,10 +85,39 @@ def main():
         print()
         print(f"Number of trials is: {trials}")
 
-    def upperbound():
-        # Approx, Feasibility checks.
+    def test_knapsack_class():
 
-        pass
+        def approx_frac(p, w, m):
+            Instance = Knapsack(p, w, m)
+            return Instance.fractional_approx()
+
+        def approx_dual(p, w, m):
+            Instance = Knapsack(p, w, m)
+            return Instance.dual_approx()
+
+        def exact(p, w, m):
+            return knapsack_dp_primal(p, w, m)
+
+        N, n = 100, 50
+        Optimal1, Times1 = bench_mark_by(N, n, approx_frac)
+        Optimal2, Times2 = bench_mark_by(N, n, approx_dual)
+        Optimal3, Times3 = bench_mark_by(N, n, exact)
+
+        CsvData = [None]*N
+        for I in range(N):
+            Row = {}
+            Row["approx_frac"], Row["approx_dual"], Row["exact"] = Optimal1[I], Optimal2[I], Optimal3[I]
+            Row["appox_frac_time"], Row["approx_dual_time"], Row["exact_time"] = Times1[I], Times2[I], Times3[I]
+            CsvData[I] = Row
+
+        with open("test_datafile.csv", mode="w") as CsvDataFile:
+            writer = csv.DictWriter(CsvDataFile, fieldnames=list(CsvDataFile[0].keys()))
+            writer.writeheader()
+            writer.writerows(CsvData)
+
+
+    test_knapsack_class()
+
 
 
 if __name__ == "__main__":

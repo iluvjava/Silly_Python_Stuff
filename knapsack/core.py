@@ -5,6 +5,7 @@
 
 """
 
+__all__ = ["knapsack_dp_primal", "knapsack_dp_dual", "Knapsack"]
 from typing import *
 RealNumber = Union[float, int]
 import math
@@ -180,7 +181,6 @@ class Knapsack:
             Get an integral solution really fast, it's feasible.
 
             The approx solution can be arbitrarily bad for pathological inputs.
-
         :return:
             Solution, optimal value.
         """
@@ -196,6 +196,7 @@ class Knapsack:
         self.epsilon = eps
 
 def main():
+
     print(knapsack_dp_dual([2, 3, 2, 1], [6, 7, 4, 1], 9))
     print(knapsack_dp_primal([2, 3, 2, 1], [6, 7, 4, 1], 9))
 
