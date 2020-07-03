@@ -193,20 +193,40 @@ class Knapsack:
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
         N = len(P)
         OptUpperBound = self.fractional_approx()[1]
-
-        def best_scaling():
-            EpsilonScale = N/(eps*max(P))
-            Psorted = P.copy()
-            Psorted.sort()
-            MinDiff = min(I1 - I0 for I0, I1 in zip(Psorted[:-1], Psorted[1:]) if I0 - I1 != 0)
-            MinDiffScale = 1/MinDiff
-            return min(EpsilonScale, MinDiffScale)
-
-        Scale = best_scaling() if not superFast else OptUpperBound/max(P)
+        Scale = self.__dual_scale_exact() if not superFast else OptUpperBound / max(P)
         ScaledProfits = [int(Profit*Scale) for Profit in P]
         Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
         Opt = sum(P[I] for I in Soln)
         return Soln, Opt
+
+    def __dual_scale_exact(self):
+        """
+            Try to find a best scale that make the optimal solution constrained by epsilon.
+        :return:
+            The scaling factor, a float value.
+        """
+        N, P, eps = len(self.__p), self.__p, self.__epsilon
+        EpsilonScale = N / (eps * max(P))
+        Psorted = P.copy()
+        Psorted.sort()
+        MinDiff = min(I1 - I0 for I0, I1 in zip(Psorted[:-1], Psorted[1:]) if I0 - I1 != 0)
+        MinDiffScale = 2 / MinDiff  # This assures the rounding won't change the relative size of all profits.
+        return min(EpsilonScale, MinDiffScale)
+
+    def __primal_scale_exact(self):
+        """
+            Return the scaling factor such that, when it's applied to the primal approx,
+            it will return the optimal solution that is the exact solution.
+
+            * The scaling factor assures that all weights of items are at least 2 apart from each other.
+        :return:
+            A positive float value, in float.
+        """
+        W = self.__w.copy()
+        Wsorted = W.sort()
+        MinDiff = min(I1 - I0 for I0, I1 in zip(Wsorted[:-1], Wsorted[1:]) if I0 - I1 != 0)
+        return 2/MinDiff
+
 
     def primal_approx_upper(self):
         """
@@ -217,7 +237,7 @@ class Knapsack:
         """
         return self.__primal_approx(mode=1)
 
-    def __primal_approx(self, mode):
+    def __primal_approx(self, mode, forceMultiplier = None):
         """
             Internal use.
         :param mode:
@@ -227,7 +247,7 @@ class Knapsack:
         """
         weights, maxWeight, profits, epsilon = self.__w, self.__b, self.__p, self.__epsilon
         WeightMax = max(weights)
-        Multiplier = math.log2(WeightMax) / (WeightMax * epsilon)  # This scales all weights
+        Multiplier =len(weights) / (WeightMax * epsilon) if forceMultiplier is None else forceMultiplier
         MaxWeightModified = int(Multiplier * maxWeight)
         ScaledWeights = [(int(W * Multiplier) + 1 if mode == 0 else int(W * Multiplier))\
                          for W in weights]
@@ -286,11 +306,18 @@ class Knapsack:
         """
             Give the best feasible solution that definitely is at least (1 - epsilon)*P_star where P_star is the
             absolute optimal of the solution.
+
+            * If not confidence on the fast approximation, it will try to compare primal scaling factor and dual
+            scaling factor.
+                ** if primal is faster, then it will see if primal's solution is good enough,
+                    ** if not, it will run dual's approximation.
+                ** If primal is not faster, then it will just run dual's approximation.
         :return:
             The optimal solution and its optimal value.
         """
         Soln, Opt, Confidence = self.approx_fastest(moreInfo=True)
         if not Confidence:
+
             Soln, Opt = self.dual_approx(superFast=False)
         return Soln, Opt
 

@@ -94,20 +94,36 @@ def main():
 
         def approx_fast(p, w, m):
             Instance = Knapsack(p, w, m)
+            print(f"Approx_Fast on problem instance:")
+            print(p)
+            print(w)
+            print(m)
             return Instance.approx_fastest()
 
         def approx_best(p, w, m):
             Instance = Knapsack(p, w, m)
+            print(f"Approx_best on problem instance:")
+            print(p)
+            print(w)
+            print(m)
             return Instance.approx_best()
 
         def approx_dual(p, w, m):
             Instance = Knapsack(p, w, m)
+            print(f"Approx_dual on problem instance:")
+            print(p)
+            print(w)
+            print(m)
             return Instance.dual_approx()
 
         def exact(p, w, m):
+            print(f"Exact_ on problem instance:")
+            print(p)
+            print(w)
+            print(m)
             return knapsack_dp_primal(p, w, m)
 
-        N, n = 10, 200
+        N, n = 100, 100
 
         ProblemsList = []
         for I in range(N):
