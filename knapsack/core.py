@@ -193,9 +193,16 @@ class Knapsack:
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
         N = len(P)
         OptUpperBound = self.fractional_approx()[1]
-        def best_scaling():
 
-        Scale = N/(eps*max(P)) if not superFast else OptUpperBound/max(P)
+        def best_scaling():
+            EpsilonScale = N/(eps*max(P))
+            Psorted = P.copy()
+            Psorted.sort()
+            MinDiff = min(I1 - I0 for I0, I1 in zip(Psorted[:-1], Psorted[1:]) if I0 - I1 != 0)
+            MinDiffScale = 1/MinDiff
+            return min(EpsilonScale, MinDiffScale)
+
+        Scale = best_scaling() if not superFast else OptUpperBound/max(P)
         ScaledProfits = [int(Profit*Scale) for Profit in P]
         Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
         Opt = sum(P[I] for I in Soln)
