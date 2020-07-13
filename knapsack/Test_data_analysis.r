@@ -11,4 +11,4 @@ boxplot(data1[, c(1, 2, 3, 4)])
 boxplot(data1[, -c(1, 2, 3, 4)])
 
 boxplot(data2[, c(1, 2, 3, 4)])
-boxplot(data2[, -c(1, 2, 3, 4)])
+boxplot(data2[, -c(1, 2, 3, 4))]

@@ -116,6 +116,7 @@ def knapsack_greedy(profits, weights, budget):
         Solution[Index] = 1
     return TotalProfits
 
+
 class Knapsack:
     """
         This class is designed to serve for branch and bound.
@@ -193,15 +194,20 @@ class Knapsack:
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
         N = len(P)
         OptUpperBound = self.fractional_approx()[1]
-        Scale = self.__dual_scale_exact() if not superFast else OptUpperBound / max(P)
+        Scale = self.__dual_scale_best() if not superFast else OptUpperBound / max(P)
         ScaledProfits = [int(Profit*Scale) for Profit in P]
         Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
         Opt = sum(P[I] for I in Soln)
         return Soln, Opt
 
-    def __dual_scale_exact(self):
+    def __dual_scale_best(self):
         """
             Try to find a best scale that make the optimal solution constrained by epsilon.
+            * Epsilon Scale:
+                * Precision is promised by it can be an over kill when profits are spread out.
+            * MinDiffScale:
+                * The solution is likely to be very close, but it depends on the items with the closest profits to
+                each other.
         :return:
             The scaling factor, a float value.
         """
@@ -213,67 +219,71 @@ class Knapsack:
         MinDiffScale = 2 / MinDiff  # This assures the rounding won't change the relative size of all profits.
         return min(EpsilonScale, MinDiffScale)
 
-    def __primal_scale_exact(self):
-        """
-            Return the scaling factor such that, when it's applied to the primal approx,
-            it will return the optimal solution that is the exact solution.
-
-            * The scaling factor assures that all weights of items are at least 2 apart from each other.
-        :return:
-            A positive float value, in float.
-        """
-        W = self.__w.copy()
-        Wsorted = W.sort()
-        MinDiff = min(I1 - I0 for I0, I1 in zip(Wsorted[:-1], Wsorted[1:]) if I0 - I1 != 0)
-        return 2/MinDiff
-
-
-    def primal_approx_upper(self):
-        """
-            Get a integral solution that may or may not be feasible, if it's infeasible, then it's an upper bound, else
-            it's the optimal solution.
-        :return:
-            solution, optimal value.
-        """
-        return self.__primal_approx(mode=1)
-
-    def __primal_approx(self, mode, forceMultiplier = None):
-        """
-            Internal use.
-        :param mode:
-            1: Over estimation; 2: Under estimation.
-        :return:
-            The integral solution of the approx, the objective value of the solution.
-        """
-        weights, maxWeight, profits, epsilon = self.__w, self.__b, self.__p, self.__epsilon
-        WeightMax = max(weights)
-        Multiplier =len(weights) / (WeightMax * epsilon) if forceMultiplier is None else forceMultiplier
-        MaxWeightModified = int(Multiplier * maxWeight)
-        ScaledWeights = [(int(W * Multiplier) + 1 if mode == 0 else int(W * Multiplier))\
-                         for W in weights]
-        Soln, objectiveValue = knapsack_dp_primal(profits, ScaledWeights, MaxWeightModified)
-        return Soln, objectiveValue
-
-    def primal_approx_lower(self):
-        """
-            Get an integral solution really fast, it's feasible.
-
-            The approx solution can be arbitrarily bad for pathological inputs.
-        :return:
-            Solution, optimal value.
-        """
-        return self.__primal_approx(mode = 2)
-
-    def upper_bound_tightiest(self):
-        """
-            Gives the tightest upper bound without bruteforcing.
-
-            The sense of optimality is given by the value of epsilon.
-        :return:
-            The upper bound, no solution will be returned.
-        """
+    def dual_eps_upperbound(self):
 
         pass
+
+    # def __primal_scale_exact(self):
+    #     """
+    #         Return the scaling factor such that, when it's applied to the primal approx,
+    #         it will return the optimal solution that is the exact solution.
+    #
+    #         * The scaling factor assures that all weights of items are at least 2 apart from each other.
+    #     :return:
+    #         A positive float value, in float.
+    #     """
+    #     W = self.__w.copy()
+    #     Wsorted = W.sort()
+    #     MinDiff = min(I1 - I0 for I0, I1 in zip(Wsorted[:-1], Wsorted[1:]) if I0 - I1 != 0)
+    #     return 2/MinDiff
+    #
+    #
+    # def primal_approx_upper(self):
+    #     """
+    #         Get a integral solution that may or may not be feasible, if it's infeasible, then it's an upper bound, else
+    #         it's the optimal solution.
+    #     :return:
+    #         solution, optimal value.
+    #     """
+    #     return self.__primal_approx(mode=1)
+    #
+    # def __primal_approx(self, mode, forceMultiplier = None):
+    #     """
+    #         Internal use.
+    #     :param mode:
+    #         1: Over estimation; 2: Under estimation.
+    #     :return:
+    #         The integral solution of the approx, the objective value of the solution.
+    #     """
+    #     weights, maxWeight, profits, epsilon = self.__w, self.__b, self.__p, self.__epsilon
+    #     WeightMax = max(weights)
+    #     Multiplier =len(weights) / (WeightMax * epsilon) if forceMultiplier is None else forceMultiplier
+    #     MaxWeightModified = int(Multiplier * maxWeight)
+    #     ScaledWeights = [(int(W * Multiplier) + 1 if mode == 0 else int(W * Multiplier))\
+    #                      for W in weights]
+    #     Soln, objectiveValue = knapsack_dp_primal(profits, ScaledWeights, MaxWeightModified)
+    #     return Soln, objectiveValue
+    #
+    # def primal_approx_lower(self):
+    #     """
+    #         Get an integral solution really fast, it's feasible.
+    #
+    #         The approx solution can be arbitrarily bad for pathological inputs.
+    #     :return:
+    #         Solution, optimal value.
+    #     """
+    #     return self.__primal_approx(mode = 2)
+    #
+    # def upper_bound_tightiest(self):
+    #     """
+    #         Gives the tightest upper bound without bruteforcing.
+    #
+    #         The sense of optimality is given by the value of epsilon.
+    #     :return:
+    #         The upper bound, no solution will be returned.
+    #     """
+    #
+    #     pass
 
     def approx_fastest(self, moreInfo=False):
         """
@@ -317,11 +327,8 @@ class Knapsack:
         """
         Soln, Opt, Confidence = self.approx_fastest(moreInfo=True)
         if not Confidence:
-
             Soln, Opt = self.dual_approx(superFast=False)
         return Soln, Opt
-
-
 
     @property
     def epsilon(self):
@@ -334,6 +341,10 @@ class Knapsack:
 
 
 def Branch_and_bound():
+    """
+
+    :return:
+    """
     pass
 
 
