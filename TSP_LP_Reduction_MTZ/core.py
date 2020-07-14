@@ -1,26 +1,13 @@
 #   Miller Tucker Zemlin's Linear Programming Reduction of the Traveling Salesman Problem.
 import math as math
 import random as rnd
-from graph.simple_digraph import *
+
+from graph.graphs import *
 from graph.point import *
 
 from typing import *
 from pulp import *
 import matplotlib.pyplot as pyplt
-
-
-
-
-class FullGraph2D(SimpleDiGraph):
-
-    def __iadd__(self, p: Type[Point]):
-        n = self.size()
-        super().__iadd__(p)
-        for I in range(n):
-            V = self[I]
-            self.connect_by_idx(I, n, dis(self._V[I], self._V[n]))
-            self.connect_by_idx(n, I, dis(self._V[I], self._V[n]))
-        return self
 
 
 class TravelingSalesManLP(FullGraph2D):

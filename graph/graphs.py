@@ -1,7 +1,7 @@
 
-__all__ = ["SimpleDiGraph"]
+__all__ = ["SimpleDiGraph", "FullGraph2D"]
 from typing import *
-
+from graph.point import Point, dis
 
 class SimpleDiGraph:
     """
@@ -129,3 +129,15 @@ class SimpleDiGraph:
             res += f"{VertexIdx}: {Vertex}\n"
         return res
 
+
+
+class FullGraph2D(SimpleDiGraph):
+
+    def __iadd__(self, p: Type[Point]):
+        n = self.size()
+        super().__iadd__(p)
+        for I in range(n):
+            V = self[I]
+            self.connect_by_idx(I, n, dis(self._V[I], self._V[n]))
+            self.connect_by_idx(n, I, dis(self._V[I], self._V[n]))
+        return self

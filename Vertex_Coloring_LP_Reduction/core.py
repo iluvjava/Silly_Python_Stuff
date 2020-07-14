@@ -14,7 +14,7 @@
 """
 
 from pulp import *
-from graph.simple_digraph import *
+from graph.graphs import *
 from graph.point import *
 import matplotlib.pyplot as pyplt; pyplt.figure(num=None, figsize=(8, 6), dpi=450, facecolor='w', edgecolor='k')
 import random as rnd

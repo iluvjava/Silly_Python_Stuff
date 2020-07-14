@@ -174,7 +174,7 @@ class Knapsack:
             Solution[Index] = 1
         return (Solution, TotalProfits) if not moreInfo else (Solution, TotalProfits, FractionalProfits/TotalProfits)
 
-    def dual_approx(self, superFast=True):
+    def dual_approx(self, superFast=True, moreInfo=False):
         """
             * Gives an integral solution that is feasible, together with an estimated upperbound for the true optimal
             using this set of items.
@@ -188,16 +188,23 @@ class Knapsack:
         :param superFast:
             This make things runs super fast, but it can't give you an upper bound for the optimal solution.
             * The solution it returns can get arbitrarily bad, but most of the time it's OK.
+        :param moreInf:
+            Gets an additional value representing the upperbound for the problem a bound that the optimal is
+            not going to escape.
         :return:
             An Integral solution that is definitely feasible, and its optimal value.
+
         """
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
         N = len(P)
         OptUpperBound = self.fractional_approx()[1]
         Scale = self.__dual_scale_best() if not superFast else OptUpperBound / max(P)
-        ScaledProfits = [int(Profit*Scale) for Profit in P]
-        Soln, _ = knapsack_dp_dual(ScaledProfits, W, B)
+        ScaledRoundedProfits = [int(Profit*Scale) for Profit in P]
+        Soln, _ = knapsack_dp_dual(ScaledRoundedProfits, W, B)
         Opt = sum(P[I] for I in Soln)
+        if moreInfo:
+            UpperBound = sum(ScaledRoundedProfits[I] for I in Soln)/(Scale*(1 - eps))
+            return Soln, Opt, UpperBound
         return Soln, Opt
 
     def __dual_scale_best(self):
@@ -220,8 +227,13 @@ class Knapsack:
         return min(EpsilonScale, MinDiffScale)
 
     def dual_eps_upperbound(self):
+        """
+            Get an error bound from the rounding and scaling algorithm fro the dual approximation.
+        :return:
+            An error bound is is definitely bounded, and the error is inversely proportional to 1-epsilon.
 
-        pass
+        """
+        return self.dual_approx(superFast=False, moreInfo=True)[-1]
 
     # def __primal_scale_exact(self):
     #     """
@@ -291,7 +303,6 @@ class Knapsack:
             in the faster way possible.
 
             Optimality can be arbitarily bad.
-
         :param moreInfo:
             If this is set to true, then it will return "True" to indicate the the error is confidently within
             epsilon, if "False" is returned, then it will indicate that the this solution has optimal value
@@ -343,8 +354,10 @@ class Knapsack:
 def Branch_and_bound():
     """
 
-    :return:
+        :return:
+        The optimal solution.
     """
+
     pass
 
 
