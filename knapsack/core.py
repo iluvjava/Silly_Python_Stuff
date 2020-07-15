@@ -9,6 +9,8 @@ __all__ = ["knapsack_dp_primal", "knapsack_dp_dual", "Knapsack"]
 from typing import *
 RealNumber = Union[float, int]
 import math
+from collections import namedtuple
+from typing import *
 
 
 def knapsack_dp_dual(
@@ -350,15 +352,33 @@ class Knapsack:
         assert 0 < eps < 1, "Epsilon out of range. "
         self.__epsilon = eps
 
+    def __len__(self):
+        return len(self.__p)
 
-def Branch_and_bound():
+
+
+def Branch_and_bound_warm_start(sackInstance: Type[Knapsack]):
     """
-
-        :return:
+        Iterative implementation of the branch and bound algorithm on Knapscak problem.
+    :param solution:
+        This is the solution that is assumed to be the best and will be improve upon.
+    :param objectiveValue:
+        This is the objective value given by the best solution.
+    :return:
         The optimal solution.
     """
+    Problem = namedtuple(ItemsIncluded, RemainingItems, SackInstance)
+    def InitialProblem():
+        return Problem([], [I for I in range(len(sackInstance))], sackInstance)
+    # 2,1, or 0 new problems. And the new upperbound and solution if there is any more one.
+    def SpawnProblems(P, UpperBound):
 
-    pass
+        pass
+    Stack = [InitialProblem()]
+    U_star, S_star = None, None # Best upperbound and Best feasible solution that gives the upper bound.
+
+
+
 
 
 def main():
