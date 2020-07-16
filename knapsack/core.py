@@ -113,7 +113,7 @@ def knapsack_greedy(profits, weights, budget):
             TotalProfits += ItemP * (RemainingBudget / ItemW)
             RemainingBudget = 0
             break
-        RemainingBudget -= ItemW;
+        RemainingBudget -= ItemW
         TotalProfits += ItemP
         Solution[Index] = 1
     return TotalProfits
@@ -122,6 +122,7 @@ def knapsack_greedy(profits, weights, budget):
 class Knapsack:
     """
         This class is designed to serve for branch and bound.
+        This class takes in arrays of item's profits, item's weights, and item's budget.
 
         Defines the sub problems of knapsack:
         * Heuristic Upper Bound.
@@ -139,7 +140,7 @@ class Knapsack:
         assert sum(1 for W in w if W > b) == 0, "All items must have weight less than the budget allowed, no redundancies. "
         assert min(w) >= 0 and min(p) >= 0, "All weights and profits must be positive. "
 
-    def fractional_approx(self, moreInfo=False):
+    def greedy_approx(self, moreInfo=False):
         """
             Allowing fractional item, estimate the upper bound for the problem (Greedy Algorithm)
 
@@ -150,7 +151,8 @@ class Knapsack:
             It's going to be between 0, and 1/2, 0 means the solution is integral, and it's the global optimal, and if
             it's 1/2, then it means the upper bound is really lose.
         :param moreInfo:
-            True: then it will return one additional parameter telling how good the upper bound is.
+            True: Returns the percentage of the profit that the fractional item contributes to the total greedy
+            estimation.
             False: It won't return the fractional item's profits.
         :return:
             The optimal value as the upper bound, and the optimal value of the solution, in the format of:
@@ -199,7 +201,7 @@ class Knapsack:
         """
         P, W, B, eps = self.__p, self.__w, self.__b, self.__epsilon # Profits, weights, and budget.
         N = len(P)
-        OptUpperBound = self.fractional_approx()[1]
+        OptUpperBound = self.greedy_approx()[1]
         Scale = self.__dual_scale_best() if not superFast else OptUpperBound / max(P)
         ScaledRoundedProfits = [int(Profit*Scale) for Profit in P]
         Soln, _ = knapsack_dp_dual(ScaledRoundedProfits, W, B)
@@ -233,7 +235,6 @@ class Knapsack:
             Get an error bound from the rounding and scaling algorithm fro the dual approximation.
         :return:
             An error bound is is definitely bounded, and the error is inversely proportional to 1-epsilon.
-
         """
         return self.dual_approx(superFast=False, moreInfo=True)[-1]
 
@@ -304,15 +305,22 @@ class Knapsack:
             Analyze the problem intelligently, and then according to the problem, tailor a feasible solution
             in the faster way possible.
 
+            * Uses super fast dual approx
+            * Uses greedy approx.
+
             Optimality can be arbitarily bad.
         :param moreInfo:
             If this is set to true, then it will return "True" to indicate the the error is confidently within
             epsilon, if "False" is returned, then it will indicate that the this solution has optimal value
             less than (1-epsilon)*P_star, where P_sar is the absolute optimal.
         :return:
-            The optimal solution and it's optimal value.
+            A approximated integral solution and it's optimal value.
+
+            Moreinfo:
+                If the optimal solution (That is returned)
+                is higher than (1-epsilon) portion of the greedy, non-integral solution.
         """
-        Soln1, Opt1, FracSlack = self.fractional_approx(moreInfo=True)
+        Soln1, Opt1, FracSlack = self.greedy_approx(moreInfo=True)
         OptLowerThreshold = Opt1*(1 - self.__epsilon)
         Opt1 = (1-FracSlack)*Opt1
         Soln2, Opt2 = self.dual_approx()  # super fast
@@ -352,12 +360,58 @@ class Knapsack:
         assert 0 < eps < 1, "Epsilon out of range. "
         self.__epsilon = eps
 
+    @property
+    def profits(self):
+        """
+            No, you can't modify it.
+        :return:
+        """
+        return self.__p.copy()
+
     def __len__(self):
         return len(self.__p)
 
 
+class KnapsackBBHelper:
 
-def Branch_and_bound_warm_start(sackInstance: Type[Knapsack]):
+    def __init__(self, profits, weights, budget):
+        """
+            MUTABLE! Modifications to the problem are welcome,
+            this class is just wrapping the set of data, very flexible.
+        :param profits:
+        :param weights:
+        :param budget:
+        """
+        self._p, self._w, self._b = profits, weights, budget
+
+    def greedy_subset(self, indices):
+        """
+            Solve a sub problem with a given set of indices.
+        :param indices:
+        :return:
+            Fractional item's index, Integral item's index, optimal value.
+        """
+        if self._b == 0:
+            return None, [I for I in indices if self._w[I] == 0], sum(self._p[I] for I in indices if self._w[I] == 0)
+            # bruh...
+        SolutionIndexRemap = [None]*len(indices)
+        P, W = [None]*len(indices), [None]*len(indices)  # profits, weights for sub-problem
+        for I, Index in enumerate(indices):
+            SolutionIndexRemap[I] = Index
+            P[I] = self._p[Index]
+            W[I] = self._p[Index]
+        SubProblem = Knapsack(P, W, self._b)
+        S, Opt = SubProblem.greedy_approx()
+        FractionalItemIndex = None
+        for K, V in S.items():
+            if V != 1:
+                FractionalItemIndex = K
+                break
+        FractionalItemIndex = None if FractionalItemIndex is None else SolutionIndexRemap[FractionalItemIndex]
+        return FractionalItemIndex, [SolutionIndexRemap[I] for I in S if S[I] == 1], Opt
+
+
+def branch_and_bound(weights, profits, budgets):
     """
         Iterative implementation of the branch and bound algorithm on Knapscak problem.
     :param solution:
@@ -367,16 +421,64 @@ def Branch_and_bound_warm_start(sackInstance: Type[Knapsack]):
     :return:
         The optimal solution.
     """
-    Problem = namedtuple(ItemsIncluded, RemainingItems, SackInstance)
+    Problem = namedtuple("ItemsIncluded", "RemainingItems", "Weights", "Profits", "Budget")
+    """
+        ItemsIncluded: 
+            List of indices that are defined by the super problems. 
+        RemainingItems: 
+            List of indices that the sub-problems are going to investigate. 
+        !! If an item's index are in neither, then it's excluded by the algorithm. 
+    """
+
     def InitialProblem():
-        return Problem([], [I for I in range(len(sackInstance))], sackInstance)
-    # 2,1, or 0 new problems. And the new upperbound and solution if there is any more one.
-    def SpawnProblems(P, UpperBound):
+        return Problem([], [I for I in range(len(profits))], budgets)
 
-        pass
+    def SpawnProblems(P, U_star, S_star):
+        """
+            Problem will produce a 2 sets of indices S1, S2, and an optimal value, opt.
+
+            S1: The integral item's indices by greedy algorithm.
+            S2: The index for the item that's fractional.
+
+            Cases:
+            1. No spawn no update. (Greedy worst than best Integral opt)
+            2. Spawn and update.
+            3. No spawn but update. (Register Current Integral Solution)
+        :param P:
+            Problem type named tuples.
+        :param UpperBound:
+            The best upperbound giver by the integral solution.
+        :return:
+            tuple， first integer representing different cases, handled by the caller.
+        """
+        W, P, B = P.Weights, P.Profits, P.Budget
+        SackHelp = KnapsackBBHelper(W, P, B)
+        FracSolnIdx, IntSolnIdx, Opt = SackHelp.greedy_subset(P.RemainingItems)
+        U_tilde = sum(P[I] for I in P.ItemsIncluded) + Opt
+        # Things to return.
+        P1, P2 = None, None
+        # Branch
+        if (U_star is None or U_tilde > U_star):
+            U_star = U_tilde # Update.
+            ItemsIncluded = P.ItemsIncluded.copy()
+            RemainingItems = P.RemainingItems.copy()
+            ItemsIncluded += IntSolnIdx + [FracSolnIdx]
+            RemainingItems.remove(FracSolnIdx)
+            P1 = Problem(ItemsIncluded, RemainingItems, W, P, B - sum(P[I] for I in ItemsIncluded))
+            ItemsIncluded = P.ItemsIncluded.copy()
+            RemainingItems = P.RemainingItems.copy()
+            ItemsIncluded += IntSolnIdx
+            RemainingItems.remove(FracSolnIdx)
+            P2 = Problem(ItemsIncluded, RemainingItems, W, P, B - sum(P[I] for I in ItemsIncluded))
+        # check if update S_star
+        if sum(P[I] for I in P.ItemsIncluded) + sum(P[I] for I in IntSolnIdx) > sum(P[I] for I in S_star):
+            S_star = P.ItemsIncluded + IntSolnIdx
+        return U_star, S_star, P1, P2
+
     Stack = [InitialProblem()]
-    U_star, S_star = None, None # Best upperbound and Best feasible solution that gives the upper bound.
-
+    U_star, S_star = None, None # Best upper-bound and Best feasible solution that gives the upper bound.
+    while len(Stack) > 0:
+        pass
 
 
 
@@ -388,7 +490,7 @@ def main():
 
     def test_frac_approx():
         K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
-        print(K.fractional_approx())
+        print(K.greedy_approx())
         print(K.dual_approx())
     test_frac_approx()
 
