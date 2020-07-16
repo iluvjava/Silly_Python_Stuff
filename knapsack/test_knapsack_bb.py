@@ -17,6 +17,7 @@ def rand_problem_sparse(N: int):
     MaxWeights = int(2 * stat.median(weights))
     return profits, weights, MaxWeights
 
+
 def main():
     def bb_vs_dp(N:int):
 
