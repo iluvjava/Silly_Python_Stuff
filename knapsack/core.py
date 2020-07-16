@@ -5,7 +5,7 @@
 
 """
 
-__all__ = ["knapsack_dp_primal", "knapsack_dp_dual", "Knapsack"]
+__all__ = ["knapsack_dp_primal", "knapsack_dp_dual", "Knapsack", "branch_and_bound"]
 from typing import *
 RealNumber = Union[float, int]
 import math
@@ -166,7 +166,7 @@ class Knapsack:
         M = [(P[I]/W[I], I) if W[I] > 0 else (float("+inf"), I) for I in range(len(P))]
         M.sort(key=(lambda x: x[0]), reverse=True)
         Solution, TotalProfits, RemainingBudget = {}, 0, B # solution: index |-> (0, 1]
-        FractionalProfits = None
+        FractionalProfits = 0
         for _, Index in M:
             ItemW, ItemP = W[Index], P[Index]
             if RemainingBudget - ItemW <= 0:
@@ -365,6 +365,7 @@ class Knapsack:
         """
             No, you can't modify it.
         :return:
+            The copied list of tiems profits for the items. s
         """
         return self.__p.copy()
 
@@ -372,46 +373,50 @@ class Knapsack:
         return len(self.__p)
 
 
-class KnapsackBBHelper:
+class Problem:
 
-    def __init__(self, profits, weights, budget):
-        """
-            MUTABLE! Modifications to the problem are welcome,
-            this class is just wrapping the set of data, very flexible.
-        :param profits:
-        :param weights:
-        :param budget:
-        """
-        self._p, self._w, self._b = profits, weights, budget
+    def __init__(this, itemsIncluded, remainingItems, weights, profits, budget):
+        assert budget >= 0, "No negative budget is allowed. "
+        this.ItemsIncluded = itemsIncluded
+        this.RemainingItems = remainingItems
+        this.Weights = weights
+        this.Profits = profits
+        this.Budget = budget
 
-    def greedy_subset(self, indices):
+    def greedy_subset(this):
         """
             Solve a sub problem with a given set of indices.
         :param indices:
         :return:
             Fractional item's index, Integral item's index, optimal value.
         """
-        if self._b == 0:
-            return None, [I for I in indices if self._w[I] == 0], sum(self._p[I] for I in indices if self._w[I] == 0)
+        indices = this.RemainingItems
+        if this.Budget == 0:
+            return None, [I for I in indices if this.Weights[I] == 0], \
+                   sum(this.Profits[I] for I in indices if this.Weights[I] == 0)
             # bruh...
+        # prune, for preconditions:
+        indices = [I for I in indices if this.Weights[I] <= this.Budget]
         SolutionIndexRemap = [None]*len(indices)
         P, W = [None]*len(indices), [None]*len(indices)  # profits, weights for sub-problem
         for I, Index in enumerate(indices):
             SolutionIndexRemap[I] = Index
-            P[I] = self._p[Index]
-            W[I] = self._p[Index]
-        SubProblem = Knapsack(P, W, self._b)
-        S, Opt = SubProblem.greedy_approx()
+            P[I] = this.Profits[Index]
+            W[I] = this.Weights[Index]
+        SubProblem = Knapsack(P, W, this.Budget)
+        S, _ = SubProblem.greedy_approx()
+        _, Opt = SubProblem.approx_best()
         FractionalItemIndex = None
         for K, V in S.items():
             if V != 1:
                 FractionalItemIndex = K
                 break
         FractionalItemIndex = None if FractionalItemIndex is None else SolutionIndexRemap[FractionalItemIndex]
-        return FractionalItemIndex, [SolutionIndexRemap[I] for I in S if S[I] == 1], Opt
+        return FractionalItemIndex, [SolutionIndexRemap[K] for K, V in S.items() if V == 1], Opt
 
 
-def branch_and_bound(weights, profits, budgets):
+
+def branch_and_bound(profits, weights, budgets):
     """
         Iterative implementation of the branch and bound algorithm on Knapscak problem.
     :param solution:
@@ -421,7 +426,6 @@ def branch_and_bound(weights, profits, budgets):
     :return:
         The optimal solution.
     """
-    Problem = namedtuple("ItemsIncluded", "RemainingItems", "Weights", "Profits", "Budget")
     """
         ItemsIncluded: 
             List of indices that are defined by the super problems. 
@@ -431,9 +435,9 @@ def branch_and_bound(weights, profits, budgets):
     """
 
     def InitialProblem():
-        return Problem([], [I for I in range(len(profits))], budgets)
+        return Problem([], [I for I in range(len(profits))], weights, profits, budgets)
 
-    def SpawnProblems(P, U_star, S_star):
+    def SpawnProblems(problem, U_star, S_star):
         """
             Problem will produce a 2 sets of indices S1, S2, and an optimal value, opt.
 
@@ -451,28 +455,30 @@ def branch_and_bound(weights, profits, budgets):
         :return:
             tuple， first integer representing different cases, handled by the caller.
         """
-        W, P, B = P.Weights, P.Profits, P.Budget
-        SackHelp = KnapsackBBHelper(W, P, B)
-        FracSolnIdx, IntSolnIdx, Opt = SackHelp.greedy_subset(P.RemainingItems)
-        U_tilde = sum(P[I] for I in P.ItemsIncluded) + Opt
+        W, P, B = problem.Weights, problem.Profits, problem.Budget
+        FracSolnIdx, IntSolnIdx, Opt = problem.greedy_subset()
+        U_tilde = sum(P[I] for I in problem.ItemsIncluded) + Opt
         # Things to return.
         P1, P2 = None, None
         # Branch
-        if (U_star is None or U_tilde > U_star):
-            U_star = U_tilde # Update.
-            ItemsIncluded = P.ItemsIncluded.copy()
-            RemainingItems = P.RemainingItems.copy()
-            ItemsIncluded += IntSolnIdx + [FracSolnIdx]
-            RemainingItems.remove(FracSolnIdx)
-            P1 = Problem(ItemsIncluded, RemainingItems, W, P, B - sum(P[I] for I in ItemsIncluded))
-            ItemsIncluded = P.ItemsIncluded.copy()
-            RemainingItems = P.RemainingItems.copy()
-            ItemsIncluded += IntSolnIdx
-            RemainingItems.remove(FracSolnIdx)
-            P2 = Problem(ItemsIncluded, RemainingItems, W, P, B - sum(P[I] for I in ItemsIncluded))
+        if (U_star is None ) or (U_tilde > U_star):
+            if FracSolnIdx is not None:
+                ItemsIncludedCopy = problem.ItemsIncluded.copy()
+                RemainingItemsCopy = problem.RemainingItems.copy()
+                ItemsIncludedCopy += [FracSolnIdx]  # only includes the fractional item
+                RemainingItemsCopy.remove(FracSolnIdx)
+                Budget = B - sum(W[I] for I in ItemsIncludedCopy)
+                if Budget >= 0:
+                    P1 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, Budget)
+                ItemsIncludedCopy = problem.ItemsIncluded.copy()
+                P2 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, B - sum(P[I] for I in ItemsIncludedCopy))
+            else:
+                U_star = U_tilde  # Update, integral...
+
         # check if update S_star
-        if sum(P[I] for I in P.ItemsIncluded) + sum(P[I] for I in IntSolnIdx) > sum(P[I] for I in S_star):
-            S_star = P.ItemsIncluded + IntSolnIdx
+        if (S_star is None) or \
+                (sum(P[I] for I in problem.ItemsIncluded) + sum(P[I] for I in IntSolnIdx) > sum(P[I] for I in S_star)):
+            S_star = problem.ItemsIncluded + IntSolnIdx
         return U_star, S_star, P1, P2
 
     Stack = [InitialProblem()]
@@ -481,6 +487,7 @@ def branch_and_bound(weights, profits, budgets):
         U_star, S_star, P1, P2 = SpawnProblems(Stack.pop(), U_star, S_star)
         if P1 is not None:
             Stack.append(P1)
+        if P2 is not None:
             Stack.append(P2)
     return U_star, S_star
 
@@ -499,7 +506,10 @@ def main():
     test_frac_approx()
 
     def test_BB():
-        pass
+        print(branch_and_bound([2, 3, 2, 1], [6, 7, 4, 1], 9))
+        print(branch_and_bound([1, 1, 1, 1, 1], [1, 2, 3, 4, 5, 6], 10))
+    test_BB()
+
 
 
 if __name__ == "__main__":
