@@ -478,7 +478,11 @@ def branch_and_bound(weights, profits, budgets):
     Stack = [InitialProblem()]
     U_star, S_star = None, None # Best upper-bound and Best feasible solution that gives the upper bound.
     while len(Stack) > 0:
-        pass
+        U_star, S_star, P1, P2 = SpawnProblems(Stack.pop(), U_star, S_star)
+        if P1 is not None:
+            Stack.append(P1)
+            Stack.append(P2)
+    return U_star, S_star
 
 
 
@@ -493,6 +497,9 @@ def main():
         print(K.greedy_approx())
         print(K.dual_approx())
     test_frac_approx()
+
+    def test_BB():
+        pass
 
 
 if __name__ == "__main__":
