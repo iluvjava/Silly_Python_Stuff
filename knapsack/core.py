@@ -45,7 +45,7 @@ def knapsack_dp_dual(
         SolnCopied = [S.copy() for S in Soln]
         for P in range(len(T)):
             NewWeight = T[P - profits[I]] + weights[I] if P - profits[I] >= 0 else float("inf")
-            if NewWeight <= T[P] and T[P] != float("+inf"): # Non-strict equal to adapt for weight being 0
+            if NewWeight <= T[P] and (NewWeight != float("+inf")):  # Non-strict equal to adapt for weight being 0
                 SolnCopied[P] = Soln[P - profits[I]] + [I]
                 newT[P] = NewWeight
             else:
@@ -413,8 +413,10 @@ class Problem:
         SubProblem = Knapsack(P, W, this.Budget)
         S, Opt, SlackProfits = SubProblem.greedy_approx(moreInfo=True)
         # if SlackProfits >= 0.3:
-        #     Opt = SubProblem.tight_upper_bound() TODO: There is something wrong with this heuristics.
-        FractionalItemIndex = None
+        #     OptBetter = SubProblem.tight_upper_bound()
+        #     if OptBetter != 0 and OptBetter < Opt:  # IMPORTANT: when tight_upperbound is zero, it means the subproblem is infeasible, but it still needs the branching.
+        #         Opt = OptBetter
+        FractionalItemIndex = None # To return.
         for K, V in S.items():
             if V != 1:
                 FractionalItemIndex = K
