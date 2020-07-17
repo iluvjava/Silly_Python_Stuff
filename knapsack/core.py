@@ -36,16 +36,16 @@ def knapsack_dp_dual(
     assert min(profits) >= 0 and min(weights) >= 0, \
         "item profits and weight must be non-negative. "
 
-    TotalProfits = int(knapsack_greedy(profits, weights, budget)) + 1
-    T = [float("+inf")] * (TotalProfits + 1)
+    ProfitsUpper = int(knapsack_greedy(profits, weights, budget)) + 1
+    T = [float("+inf")] * (ProfitsUpper + 1)
     T[0] = 0
-    Soln = [[] for P in range(TotalProfits + 1)]  # Store the indices of item that sum up to that exact profits
+    Soln = [[] for P in range(ProfitsUpper + 1)]  # Store the indices of item that sum up to that exact profits
     for I in range(len(profits)):
         newT = [float("nan")]*len(T)
         SolnCopied = [S.copy() for S in Soln]
         for P in range(len(T)):
             NewWeight = T[P - profits[I]] + weights[I] if P - profits[I] >= 0 else float("inf")
-            if NewWeight < T[P]:
+            if NewWeight <= T[P] and T[P] != float("+inf"): # Non-strict equal to adapt for weight being 0
                 SolnCopied[P] = Soln[P - profits[I]] + [I]
                 newT[P] = NewWeight
             else:
@@ -80,14 +80,16 @@ def knapsack_dp_primal(
     Soln = [[] for W in range(Budget + 1)] # Store the indices of item that sum up to that exact weight.
     for I in range(len(profits)):
         newT = [float("nan")]*len(T)
+        SolnCopied = [A.copy() for A in Soln]
         for W in range(Budget + 1):
             NewProfit = T[W - weights[I]] + profits[I] if W - weights[I] >= 0 else float("-inf")
             if NewProfit > T[W]:
-                Soln[W] = Soln[W - weights[I]] + [I]
+                SolnCopied[W] = Soln[W - weights[I]] + [I]
                 newT[W] = NewProfit
             else:
                 newT[W] = T[W]
         T = newT
+        Soln = SolnCopied
     P_star = max(T)
     return Soln[T.index(P_star)], P_star
 
@@ -95,8 +97,7 @@ def knapsack_dp_primal(
 def knapsack_greedy(profits, weights, budget):
     assert len(profits) == len(weights), "weights and length must be in the same length. "
     assert min(profits) >= 0 and min(weights) >= 0, \
-        "item profits and weight must be non-negative. "
-
+        "item profits and weight must be non-negative."
     M = [(profits[I] / weights[I], I) if weights[I] > 0 else (float("+inf"), I) for I in range(len(profits))]
     M.sort(key=(lambda x: x[0]), reverse=True)
     Solution, TotalProfits, RemainingBudget = {}, 0, budget  # solution: index |-> (0, 1]
@@ -165,9 +166,11 @@ class Knapsack:
             if RemainingBudget - ItemW <= 0:
                 Solution[Index] = RemainingBudget/ItemW
                 FractionalProfits = ItemP*(RemainingBudget/ItemW)
-                TotalProfits += FractionalProfits; RemainingBudget = 0
+                TotalProfits += FractionalProfits
+                RemainingBudget = 0
                 break
-            RemainingBudget -= ItemW; TotalProfits += ItemP
+            RemainingBudget -= ItemW
+            TotalProfits += ItemP
             Solution[Index] = 1
         return (Solution, TotalProfits) if not moreInfo else (Solution, TotalProfits, FractionalProfits/TotalProfits)
 
@@ -215,6 +218,8 @@ class Knapsack:
         :return:
             The scaling factor, a float value.
         """
+        if len(self.__p) == 1:
+            return 1;
         N, P, eps = len(self.__p), self.__p, self.__epsilon
         EpsilonScale = N / (eps * max(P))
         Psorted = P.copy()
@@ -344,6 +349,14 @@ class Knapsack:
             Soln, Opt = self.dual_approx(superFast=False)
         return Soln, Opt
 
+    def tight_upper_bound(self):
+        """
+            Dual-approx upper boubd.
+        :return:
+        """
+        Soln, Opt, Upperbound = self.dual_approx(superFast=False, moreInfo=True)
+        return Upperbound
+
     @property
     def epsilon(self):
         return self.epsilon
@@ -384,12 +397,13 @@ class Problem:
             Fractional item's index, Integral item's index, optimal value.
         """
         indices = this.RemainingItems
+        # Edge Case 1
         if this.Budget == 0:
             return None, [I for I in indices if this.Weights[I] == 0], \
                    sum(this.Profits[I] for I in indices if this.Weights[I] == 0)
-            # bruh...
-        # prune, for preconditions:
-        indices = [I for I in indices if this.Weights[I] <= this.Budget]
+        # edge case 2
+        if len(indices) == 0:
+            return None, [], 0
         SolutionIndexRemap = [None]*len(indices)
         P, W = [None]*len(indices), [None]*len(indices)  # profits, weights for sub-problem
         for I, Index in enumerate(indices):
@@ -397,8 +411,9 @@ class Problem:
             P[I] = this.Profits[Index]
             W[I] = this.Weights[Index]
         SubProblem = Knapsack(P, W, this.Budget)
-        S, _ = SubProblem.greedy_approx()
-        _, Opt = SubProblem.approx_best()
+        S, Opt, SlackProfits = SubProblem.greedy_approx(moreInfo=True)
+        # if SlackProfits >= 0.3:
+        #     Opt = SubProblem.tight_upper_bound() TODO: There is something wrong with this heuristics.
         FractionalItemIndex = None
         for K, V in S.items():
             if V != 1:
@@ -406,6 +421,21 @@ class Problem:
                 break
         FractionalItemIndex = None if FractionalItemIndex is None else SolutionIndexRemap[FractionalItemIndex]
         return FractionalItemIndex, [SolutionIndexRemap[K] for K, V in S.items() if V == 1], Opt
+
+
+    def __repr__(this):
+        """
+            For debug.
+        :return:
+            str
+        """
+        s = f"Problem:\n"
+        s += f"w={this.Weights}\n"
+        s += f"p={this.Profits}\n"
+        s += f"b={this.Budget}\n"
+        s += f"ItemsIncluded = {this.ItemsIncluded}\n"
+        s += f"ItemsRemaingin = {this.RemainingItems}"
+        return s
 
 
 def branch_and_bound(profits, weights, budgets):
@@ -448,28 +478,35 @@ def branch_and_bound(profits, weights, budgets):
             tuple， first integer representing different cases, handled by the caller.
         """
         W, P, B = problem.Weights, problem.Profits, problem.Budget
+
         FracSolnIdx, IntSolnIdx, Opt = problem.greedy_subset()
+
         U_tilde = sum(P[I] for I in problem.ItemsIncluded) + Opt
-        # Things to return.
+
         P1, P2 = None, None
         # Branch
-        if (U_star is None ) or (U_tilde > U_star):
+        if (U_star is None) or (U_tilde > U_star):
             if FracSolnIdx is not None:
                 ItemsIncludedCopy = problem.ItemsIncluded.copy()
                 RemainingItemsCopy = problem.RemainingItems.copy()
                 ItemsIncludedCopy += [FracSolnIdx]  # only includes the fractional item
                 RemainingItemsCopy.remove(FracSolnIdx)
-                Budget = B - sum(W[I] for I in ItemsIncludedCopy)
+                Budget = B - W[FracSolnIdx]
                 if Budget >= 0:
                     P1 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, Budget)
+
                 ItemsIncludedCopy = problem.ItemsIncluded.copy()
-                P2 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, B - sum(P[I] for I in ItemsIncludedCopy))
+                RemainingItemsCopy = problem.RemainingItems.copy()
+                RemainingItemsCopy.remove(FracSolnIdx)
+                P2 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, B)
+
             else:
                 U_star = U_tilde  # Update, integral...
+                S_star = problem.ItemsIncluded + IntSolnIdx
         # check if update S_star
-        if (S_star is None) or \
-                (sum(P[I] for I in problem.ItemsIncluded) + sum(P[I] for I in IntSolnIdx) > sum(P[I] for I in S_star)):
-            S_star = problem.ItemsIncluded + IntSolnIdx
+        # if (S_star is None) or \
+        #        (sum(P[I] for I in problem.ItemsIncluded) + sum(P[I] for I in IntSolnIdx) > sum(P[I] for I in S_star)):
+
         return U_star, S_star, P1, P2
 
     Stack = [InitialProblem()]
@@ -480,22 +517,29 @@ def branch_and_bound(profits, weights, budgets):
             Stack.append(P1)
         if P2 is not None:
             Stack.append(P2)
-    return U_star, S_star
-
+    return S_star, U_star
 
 
 
 def main():
-    print(knapsack_dp_dual([2, 3, 2, 1], [6, 7, 4, 1], 9))
-    print(knapsack_dp_primal([2, 3, 2, 1], [6, 7, 4, 1], 9))
-    def test_frac_approx():
-        K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
-        print(K.greedy_approx())
-        print(K.dual_approx())
-    test_frac_approx()
+    # print(knapsack_dp_dual([2, 3, 2, 1], [6, 7, 4, 1], 9))
+    # print(knapsack_dp_primal([2, 3, 2, 1], [6, 7, 4, 1], 9))
+    # def test_frac_approx():
+    #     K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
+    #     print(K.greedy_approx())
+    #     print(K.dual_approx())
+    # test_frac_approx()
+
     def test_BB():
-        print(branch_and_bound([2, 3, 2, 1], [6, 7, 4, 1], 9))
-        print(branch_and_bound([1, 1, 1, 1, 1], [1, 2, 3, 4, 5, 6], 10))
+        # print(branch_and_bound([2, 3, 2, 1], [6, 7, 4, 1], 9))
+        # print(branch_and_bound([1, 1, 1, 1, 1], [1, 2, 3, 4, 5, 6], 10))
+        P = [0.940101198058437, 0.4915241556131147, 0.06332873674671424, 0.9451293967228337]
+        W = [2, 3, 0, 3]
+        B = 4
+        print(branch_and_bound(P, W, B))  # solution should be [2, 3], not [2, 0]
+
+        sack = Knapsack([0.940101198058437, 0.06332873674671424], [2, 0], 1)
+        print(sack.dual_approx())
     test_BB()
 
 
