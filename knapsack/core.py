@@ -35,8 +35,6 @@ def knapsack_dp_dual(
     assert len(profits) == len(weights), "weights and length must be in the same length. "
     assert min(profits) >= 0 and min(weights) >= 0, \
         "item profits and weight must be non-negative. "
-    assert sum([1 for W in weights if W > budget]) == 0, \
-        "All items must be weights less than maxWeight to reduce redundancies"
 
     TotalProfits = int(knapsack_greedy(profits, weights, budget)) + 1
     T = [float("+inf")] * (TotalProfits + 1)
@@ -77,8 +75,6 @@ def knapsack_dp_primal(
     assert len(profits) == len(weights), "weights and length must be in the same length. "
     assert min(profits) >= 0 and min(weights) >= 0,\
         "item profits and weight must be non-negative. "
-    assert sum([1 for W in weights if W > Budget]) == 0,\
-        "All items must be weights less than maxWeight to reduce redundancies"
 
     T = [0] * (Budget + 1)
     Soln = [[] for W in range(Budget + 1)] # Store the indices of item that sum up to that exact weight.
@@ -100,8 +96,6 @@ def knapsack_greedy(profits, weights, budget):
     assert len(profits) == len(weights), "weights and length must be in the same length. "
     assert min(profits) >= 0 and min(weights) >= 0, \
         "item profits and weight must be non-negative. "
-    assert sum([1 for W in weights if W > budget]) == 0, \
-        "All items must be weights less than maxWeight to reduce redundancies"
 
     M = [(profits[I] / weights[I], I) if weights[I] > 0 else (float("+inf"), I) for I in range(len(profits))]
     M.sort(key=(lambda x: x[0]), reverse=True)
@@ -137,7 +131,6 @@ class Knapsack:
 
     def __preconditions(self, p, w, b):
         assert len(p) == len(w), "Length of list of weight must equal to the length of list of profits. "
-        assert sum(1 for W in w if W > b) == 0, "All items must have weight less than the budget allowed, no redundancies. "
         assert min(w) >= 0 and min(p) >= 0, "All weights and profits must be positive. "
 
     def greedy_approx(self, moreInfo=False):
@@ -415,7 +408,6 @@ class Problem:
         return FractionalItemIndex, [SolutionIndexRemap[K] for K, V in S.items() if V == 1], Opt
 
 
-
 def branch_and_bound(profits, weights, budgets):
     """
         Iterative implementation of the branch and bound algorithm on Knapscak problem.
@@ -474,7 +466,6 @@ def branch_and_bound(profits, weights, budgets):
                 P2 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, B - sum(P[I] for I in ItemsIncludedCopy))
             else:
                 U_star = U_tilde  # Update, integral...
-
         # check if update S_star
         if (S_star is None) or \
                 (sum(P[I] for I in problem.ItemsIncluded) + sum(P[I] for I in IntSolnIdx) > sum(P[I] for I in S_star)):
@@ -495,21 +486,17 @@ def branch_and_bound(profits, weights, budgets):
 
 
 def main():
-
     print(knapsack_dp_dual([2, 3, 2, 1], [6, 7, 4, 1], 9))
     print(knapsack_dp_primal([2, 3, 2, 1], [6, 7, 4, 1], 9))
-
     def test_frac_approx():
         K = Knapsack([2, 3, 2, 1], [6, 7, 4, 1], 9)
         print(K.greedy_approx())
         print(K.dual_approx())
     test_frac_approx()
-
     def test_BB():
         print(branch_and_bound([2, 3, 2, 1], [6, 7, 4, 1], 9))
         print(branch_and_bound([1, 1, 1, 1, 1], [1, 2, 3, 4, 5, 6], 10))
     test_BB()
-
 
 
 if __name__ == "__main__":
