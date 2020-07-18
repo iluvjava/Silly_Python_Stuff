@@ -103,6 +103,10 @@ def knapsack_greedy(profits, weights, budget):
     Solution, TotalProfits, RemainingBudget = {}, 0, budget  # solution: index |-> (0, 1]
     for _, Index in M:
         ItemW, ItemP = weights[Index], profits[Index]
+        if ItemW == 0:
+            TotalProfits += ItemP
+            Solution[Index] = 1
+            continue
         if RemainingBudget - ItemW <= 0:
             Solution[Index] = RemainingBudget / ItemW
             TotalProfits += ItemP * (RemainingBudget / ItemW)
@@ -163,6 +167,10 @@ class Knapsack:
         FractionalProfits = 0
         for _, Index in M:
             ItemW, ItemP = W[Index], P[Index]
+            if ItemW == 0:
+                TotalProfits += ItemP
+                Solution[Index] = 1
+                continue
             if RemainingBudget - ItemW <= 0:
                 Solution[Index] = RemainingBudget/ItemW
                 FractionalProfits = ItemP*(RemainingBudget/ItemW)
@@ -357,6 +365,14 @@ class Knapsack:
         Soln, Opt, Upperbound = self.dual_approx(superFast=False, moreInfo=True)
         return Upperbound
 
+    def mixed_heuristics_for_bb(self):
+        """
+            This method is designed for the branch and bound algorith, helping it for the investigation of the
+            sub-problems.
+        :return:
+        """
+        pass
+
     @property
     def epsilon(self):
         return self.epsilon
@@ -461,6 +477,14 @@ def branch_and_bound(profits, weights, budgets):
     def InitialProblem():
         return Problem([], [I for I in range(len(profits))], weights, profits, budgets)
 
+    def WarmStart():
+        KS = Knapsack(profits, weights, budgets)
+        KS.epsilon = 0.05
+        Soln, Opt =  KS.greedy_approx()
+        Soln = [K for K, V in Soln.items() if V == 1]
+        Opt = sum(profits[I] for I in Soln)
+        return Soln, Opt
+
     def SpawnProblems(problem, U_star, S_star):
         """
             Problem will produce a 2 sets of indices S1, S2, and an optimal value, opt.
@@ -480,11 +504,8 @@ def branch_and_bound(profits, weights, budgets):
             tuple， first integer representing different cases, handled by the caller.
         """
         W, P, B = problem.Weights, problem.Profits, problem.Budget
-
         FracSolnIdx, IntSolnIdx, Opt = problem.greedy_subset()
-
         U_tilde = sum(P[I] for I in problem.ItemsIncluded) + Opt
-
         P1, P2 = None, None
         # Branch
         if (U_star is None) or (U_tilde > U_star):
@@ -496,23 +517,20 @@ def branch_and_bound(profits, weights, budgets):
                 Budget = B - W[FracSolnIdx]
                 if Budget >= 0:
                     P1 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, Budget)
-
                 ItemsIncludedCopy = problem.ItemsIncluded.copy()
                 RemainingItemsCopy = problem.RemainingItems.copy()
                 RemainingItemsCopy.remove(FracSolnIdx)
                 P2 = Problem(ItemsIncludedCopy, RemainingItemsCopy, W, P, B)
-
             else:
+                # print(f"Improved Utilde from: {U_star} to {U_tilde} ")
                 U_star = U_tilde  # Update, integral...
                 S_star = problem.ItemsIncluded + IntSolnIdx
-        # check if update S_star
-        # if (S_star is None) or \
-        #        (sum(P[I] for I in problem.ItemsIncluded) + sum(P[I] for I in IntSolnIdx) > sum(P[I] for I in S_star)):
 
+            P1, P2 = P2, P1  # P1 usually have more profits in it, better for branching.
         return U_star, S_star, P1, P2
 
     Stack = [InitialProblem()]
-    U_star, S_star = None, None # Best upper-bound and Best feasible solution that gives the upper bound.
+    S_star, U_star = WarmStart() # Best upper-bound and Best feasible solution that gives the upper bound.
     while len(Stack) > 0:
         U_star, S_star, P1, P2 = SpawnProblems(Stack.pop(), U_star, S_star)
         if P1 is not None:

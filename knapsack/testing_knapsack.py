@@ -135,10 +135,10 @@ def main():
 
         CsvData = [None]*N
         for I in range(N):
-            Row = {}
-            Row["approx_fast"], Row["approx_dual"], Row["exact"], Row["approx_best"] = Optimal1[I], Optimal2[I], Optimal3[I], Optimal4[I]
-            Row["appox_fast_time"], Row["approx_dual_time"], Row["exact_time"], Row["approx_best_time"] = Times1[I], Times2[I], Times3[I], Times4[I]
-            CsvData[I] = Row
+            Col = {}
+            Col["approx_fast"], Col["approx_dual"], Col["exact"], Col["approx_best"] = Optimal1[I], Optimal2[I], Optimal3[I], Optimal4[I]
+            Col["appox_fast_time"], Col["approx_dual_time"], Col["exact_time"], Col["approx_best_time"] = Times1[I], Times2[I], Times3[I], Times4[I]
+            CsvData[I] = Col
 
         with open(fileName, mode="w") as CsvDataFile:
             writer = csv.DictWriter(CsvDataFile, fieldnames=list(CsvData[0].keys()))
