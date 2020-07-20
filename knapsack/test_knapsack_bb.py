@@ -1,7 +1,6 @@
-
-
 from knapsack.core import *
 from random import random as rnd
+from numpy import random as np_rnd
 import statistics as stat
 
 def rand_problem_dense(N: int):
@@ -18,9 +17,14 @@ def rand_problem_sparse(N: int):
     return profits, weights, MaxWeights
 
 
+
+
+
 def main():
     def bb_vs_dp(N:int, n:int):
+        Saturation = 0.3
         ProblemList = [rand_problem_dense(n) for I in range(N)] + [rand_problem_sparse(n) for I in range(N)]
+        ProblemList += [rand_problem_exponential(n, 0.3) for I in range(N)]
         for P, W, B in ProblemList:
             S1, Opt1 = branch_and_bound(P, W, B)
             S1.sort()
