@@ -430,7 +430,7 @@ class Problem:
         S, Opt, SlackProfits = SubProblem.greedy_approx(moreInfo=True)
         # if SlackProfits >= 0.3:
         #     OptBetter = SubProblem.tight_upper_bound()
-        #     if OptBetter != 0 and OptBetter < Opt:  # IMPORTANT: when tight_upperbound is zero, it means the subproblem is infeasible, but it still needs the branching.
+        #     if OptBetter != 0 and OptBetter < Opt:  # IMPORTANT: wrong heuristics for the solution.
         #         Opt = OptBetter
         FractionalItemIndex = None # To return.
         for K, V in S.items():
