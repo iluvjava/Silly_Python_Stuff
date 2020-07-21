@@ -39,7 +39,7 @@ def main():
     Roots = np.linspace(0, 9, 3)
     YScatteredPoints = generate_random_poly(XGrindPoints, Roots, 10)
     pyplt.scatter(XGrindPoints, YScatteredPoints)
-    # pyplt.show()
+    pyplt.show()
 
 if __name__ == "__main__":
     main()
