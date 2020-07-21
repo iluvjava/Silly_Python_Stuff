@@ -131,28 +131,38 @@ class TrainOrdinary2DRegression:
         :return:
             The MSE for it.
         """
-
+        assert sum(1 for I in indices if I < 0 or I >= len(self.XDataPoints)), "Invalid Trainning Indices. "
+        X_train, X_test = np.array([self.XDataPoints[I] for I in indices]), \
+                          np.array([self.XDataPoints[I] for I in range(len(self.XDataPoints)) if I not in indices])
+        Y_train, Y_test = np.array([self.YDataPoints[I] for I in indices]), \
+                          np.array([self.YDataPoints[I] for I in range(len(self.YDataPoints)) if I not in indices])
+        LinModel = ordinary_regression_fit_2d(X_train, Y_train)
+        return regression_MSE_compute(LinModel, X_test, Y_test)
 
     @property
     def XDataPoints(self):
         return self._X
 
     @property
-    def YdataPoints(self):
+    def YDataPoints(self):
         return self._Y
 
 
 
 
 def main():
-    XGrindPoints = np.linspace(0, 10, 100)
-    Roots = np.linspace(0, 9, 3)
-    YScatteredPoints = generate_random_poly(XGrindPoints, roots = Roots, epsilon=10)
-    pyplt.scatter(XGrindPoints, YScatteredPoints)
-    pyplt.show()
+    def test1():
+        XGrindPoints = np.linspace(0, 10, 100)
+        Roots = np.linspace(0, 9, 3)
+        YScatteredPoints = generate_random_poly(XGrindPoints, roots = Roots, epsilon=10)
+        pyplt.scatter(XGrindPoints, YScatteredPoints)
+        pyplt.show()
 
-    LinModel = ordinary_regression_fit_2d(XGrindPoints, YScatteredPoints, 3)
-    print(f"The df of the model is: {len(LinModel.coef_)}")
+    def test2():
+        pass
+
+
+
 
 
 
