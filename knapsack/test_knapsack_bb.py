@@ -17,6 +17,13 @@ def rand_problem_sparse(N: int):
     return profits, weights, MaxWeights
 
 
+def rand_problem_exponential(scale: int, itemsCount: int, satruration):
+    assert 0 < satruration < 1
+    Profits, Weights = np_rnd.exponential(scale=scale, size=(2, itemsCount))
+    Profits, Weights = map(lambda x: int(x), Profits), map(lambda x:int(x), Weights)
+    Profits, Weights = list(Profits), list(Weights)
+    Budget = int(satruration*sum(W for W in Weights))
+    return Profits, Weights, Budget
 
 
 
