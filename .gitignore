@@ -73,3 +73,6 @@ knapsack/__pycache__/__init__.cpython-37.pyc
 knapsack/__pycache__/branch_bound.cpython-37.pyc
 knapsack/__pycache__/core.cpython-37.pyc
 knapsack/__pycache__/scratch_paper_works.cpython-37.pyc
+
+.idea/misc.xml
+.idea/Silly_Python_Stuff.iml
