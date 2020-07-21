@@ -2,6 +2,8 @@ import json
 import os
 CWD = os.getcwd() # Current working directory.
 print(f"CWD: {CWD}")
+import matplotlib as mpl
+mpl.rcParams['figure.dpi'] = 400
 import matplotlib.pyplot as pyplt
 PYPLOTCOLORS = ['b', 'g','r', 'c','m', 'y', 'k']
 
@@ -18,7 +20,7 @@ def plot_nested_point_list(pointListList):
         for Point in PointList:
             x, y = Point["x"], Point["y"]
             pyplt.scatter(x=x, y=y, color=PYPLOTCOLORS[I])
-    pyplt.show(dpi="400")
+    pyplt.show()
 
 
 def main():
