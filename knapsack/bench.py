@@ -1,11 +1,10 @@
-
 from random import random as rnd
 from numpy import random as np_rnd
 from time import time
 from knapsack.core import *
 import sys; import os
 from quick_csv import core
-
+from quick_json import quick_json
 
 
 def rand_problem_ints(range_:int, itemsCount:int, sparseness):
@@ -47,7 +46,7 @@ def bench_bb_with_dp(trials:int):
         return Opt
 
     ItemCount = 20
-    ItemProfitsWeightsRange = 10000
+    ItemProfitsWeightsRange = 1000
     KnapSackSparseness = 0.1
     ProblemList = [rand_problem_ints(ItemProfitsWeightsRange, ItemCount, KnapSackSparseness) for P in range(trials)]
     ProblemList += [rand_problem_exponential(ItemProfitsWeightsRange, ItemCount, KnapSackSparseness) for P in range(trials)]
@@ -56,6 +55,8 @@ def bench_bb_with_dp(trials:int):
     CSVHeader = ["bb_time", "dp_time", "bb_opt", "dp_opt"]
     CSVCols = [bb_time, dp_time, bb_opt, dp_opt]
     core.csv_col_save("bb, dp bench.csv", colHeader= CSVHeader, cols=CSVCols)
+    quick_json.json_encode([CSVHeader, CSVCols], filename="bb, dp bench.json")
+
 
     print("Tests Detailed: ")
     print(f"The same set of problem is run on both BB and DP, time and optimal value is recored. ")
