@@ -146,8 +146,16 @@ def simple_min_search(f, a, b, tol):
     return (m1+m2)/2, f((m1+m2)/2)
 
 
+class MyRegression:
 
-class MyLittleRegression:
+    def train_model_for(self, indices, tweakingParam):
+        pass
+
+    def query(self):
+        pass
+
+
+class MyLittleMyRegression(MyRegression):
     """
         Train a model, get the MSE, and see how the validation errors changes with DF of the model.
         It's only for 2d.
@@ -229,7 +237,7 @@ class MyLittleRegressionTrainer:
             min deg, min MSE, Instance of Mylittle Regression.
         """
         Test_Indices = rand_split_idx(len(xData))
-        Regression = MyLittleRegression(xData, yData)
+        Regression = MyLittleMyRegression(xData, yData)
         def mse_error(polyDegree):
             _, MSE = Regression.train_model_for(Test_Indices, int(polyDegree))
             return MSE
@@ -252,7 +260,7 @@ def main():
         Y = generate_random_poly(X, epsilon=10, roots=np.array([1, 3, 8]))
         pyplt.scatter(X, Y)
 
-        MyRegression = MyLittleRegression(X, Y)
+        MyRegression = MyLittleMyRegression(X, Y)
         LinModel, MSE = MyRegression.train_model_for(rand_split_idx(len(X)), 3)
         X_GridPoints = np.linspace(0, 10, 100)
         Y_GridPointsPredicted = MyRegression.query_model(X_GridPoints)
@@ -267,7 +275,7 @@ def main():
 
     def test4(testPoints):
         X = np.random.uniform(0, 10, testPoints)
-        Y = generate_random_poly(X, epsilon=10, roots=np.array([1, 3, 8]))
+        Y = generate_random_poly(X, epsilon=10, roots=np.array([5, 8]))
         Trainer = MyLittleRegressionTrainer(10)
         Deg, MinMSE, LittleRegression = Trainer.train_it_on(X, Y)
         print(f"test4: deg = {Deg}")
@@ -277,7 +285,7 @@ def main():
         pyplt.plot(X_GridPoints, Y_points, color="r")
         pyplt.show()
 
-    test4()
+    test4(200)
 
 
 
