@@ -68,34 +68,49 @@ def ordinary_regression_fit_2d(xPoints:NpArray, yPoints:NpArray, polyOrder:int):
     :param yPoints:
         Row Vector!
     :param polyOrder:
-        The order of the polynomial to fit the curve.
+        The order of the polynomial to fit the curve
     :return:
+        The linear model, the Vandermonde matrix for the points you given.
     """
     assert len(xPoints) == len(yPoints), "X, Y dim mismatches"
     poly = PolynomialFeatures(degree=polyOrder)
     Vandermonde = poly.fit_transform(xPoints[:, np.newaxis]) # Get the Vandermonde matrix from sklearn
     LinModel = linear_model.LinearRegression()
     LinModel.fit(Vandermonde, yPoints)
-    return LinModel
+    return LinModel, Vandermonde
 
 
-def regression_MSE_compute(linModel, predictors:NpArray, expectedPredictants: NpArray):
+def regression_MSE_compute(linModel, predictors:NpArray, expectedPredictants: NpArray, vandermonde = None):
     """
 
     :param linModel:
+        The Trained Linear Model.
     :param predictors:
+        A 1d NP, Array, ROW VECTOR
     :param expectedPredictants:
+        A 1d NP array, ROW VECTOR
+    :param vandermonde:
+        This is a vandermone matrix, if you already have it as a type of from Polynomial features
+        from previous usage, then feed it in and speed things up.
     :return:
+        The total MSE of the model, the residuals of the model too.
     """
-    PredictedByModel = linear_model.predict(predictors)
+    Vandermonde = None
+    if vandermonde is None:
+        Vandermonde = PolynomialFeatures(degree=len(linModel.coef_)-1)
+        Vandermonde = Vandermonde.fit_transform(predictors[:, np.newaxis])
+    else:
+        Vandermonde = vandermonde
+    PredictedByModel = linModel.predict(Vandermonde)
     ActualY = expectedPredictants
-    n = len(predictors) - len(linModel.coef_)
-    Res = sum((PredictedByModel - ActualY)**2)
-    Res /= n
-    return Res
+    n = len(predictors)
+    Residual = PredictedByModel - ActualY
+    MSE = np.sum((Residual)**2)
+    MSE /= n
+    return MSE, Residual
 
 
-def rand_split_idx(l: int, ratio):
+def rand_split_idx(l: int, ratio=0.5):
     """
         Get all the indices for the training data set.
     :param l:
@@ -109,9 +124,33 @@ def rand_split_idx(l: int, ratio):
     return [I for I in range(l) if sysrnd() < ratio]
 
 
-class TrainOrdinary2DRegression:
+def simple_min_search(f, a, b, tol):
+    """
+        Find the minimum of a univariable smooth function.
+    :param f:
+        function.
+    :param a:
+        lower bound.
+    :param b:
+        upper bound.
+    :return:
+        argmin, min.
+    """
+    m1, m2 = (b-a)*(1/3) + a, a + (b-a)*(2/3)
+    while abs(m1 - m2) > tol:
+        if f(m1) <= f(m2):
+            b = m2
+        else:
+            a = m1
+        m1, m2 = (b - a) * (1 / 3) + a, a + (b - a) * (2 / 3)
+    return (m1+m2)/2, f((m1+m2)/2)
+
+
+
+class MyLittleRegression:
     """
         Train a model, get the MSE, and see how the validation errors changes with DF of the model.
+        It's only for 2d.
     """
 
     def __init__(self, xPoints:NpArray, yPoints:NpArray):
@@ -122,8 +161,9 @@ class TrainOrdinary2DRegression:
             1d ROW VECTOR!
         """
         self._X, self._Y = np.copy(xPoints), np.copy(yPoints)
+        self._LinModel = None
 
-    def get_MSE_for(self, indices):
+    def train_model_for(self, indices, polyOrder):
         """
             Get the MSE for a certain set of indices marking the training data set.
         :param indices:
@@ -131,13 +171,31 @@ class TrainOrdinary2DRegression:
         :return:
             The MSE for it.
         """
-        assert sum(1 for I in indices if I < 0 or I >= len(self.XDataPoints)), "Invalid Trainning Indices. "
+        assert sum(1 for I in indices if (I < 0 or I >= len(self.XDataPoints))) == 0, \
+            f"Invalid Trainning Indices: {indices}, len of data: {len(self.XDataPoints)}"
         X_train, X_test = np.array([self.XDataPoints[I] for I in indices]), \
                           np.array([self.XDataPoints[I] for I in range(len(self.XDataPoints)) if I not in indices])
         Y_train, Y_test = np.array([self.YDataPoints[I] for I in indices]), \
                           np.array([self.YDataPoints[I] for I in range(len(self.YDataPoints)) if I not in indices])
-        LinModel = ordinary_regression_fit_2d(X_train, Y_train)
-        return regression_MSE_compute(LinModel, X_test, Y_test)
+        LinModel, V = ordinary_regression_fit_2d(X_train, Y_train, polyOrder=polyOrder)
+        self._LinModel = LinModel
+        MSE, _ =  regression_MSE_compute(LinModel, X_test, Y_test)
+        return LinModel, MSE
+
+
+    def query_model(self, x:NpArray):
+        """
+            Query the model with a list of points, and it will return the prediction.
+        :param x:
+            ROW VECTOR or villina Array.
+        :return:
+            Vanilla flavor array for the predicted data points.
+        """
+
+        Vandermonde = PolynomialFeatures(degree=len(self._LinModel.coef_) - 1)
+        Vandermonde = Vandermonde.fit_transform(x[:,np.newaxis])
+        Predicted = self._LinModel.predict(Vandermonde)
+        return Predicted
 
     @property
     def XDataPoints(self):
@@ -147,10 +205,41 @@ class TrainOrdinary2DRegression:
     def YDataPoints(self):
         return self._Y
 
+    @property
+    def LinModel(self):
+        return self._LinModel
+
+
+class MyLittleRegressionTrainer:
+    """
+        This class will take in a series of data, and then automatically determine the
+        correct polynomial degree for the 2d regression model.
+    """
+    def __init__(self, maxPolyOrder:int):
+        assert maxPolyOrder < 20 and maxPolyOrder >= 1, "The maxpoly order is ridiculous. "
+        self._MaxPolyOrder = maxPolyOrder
+
+    def train_it_on(self, xData, yData):
+        """
+            Trains on a certain set of data and figure out the best degree for the
+            polynomial for the data.
+        :param xData:
+        :param yData:
+        :return:
+            min deg, min MSE, Instance of Mylittle Regression.
+        """
+        Test_Indices = rand_split_idx(len(xData))
+        Regression = MyLittleRegression(xData, yData)
+        def mse_error(polyDegree):
+            _, MSE = Regression.train_model_for(Test_Indices, int(polyDegree))
+            return MSE
+        Argmin, min = simple_min_search(mse_error, 1, self._MaxPolyOrder, 1)
+        return Argmin, min, Regression
 
 
 
 def main():
+
     def test1():
         XGrindPoints = np.linspace(0, 10, 100)
         Roots = np.linspace(0, 9, 3)
@@ -159,8 +248,36 @@ def main():
         pyplt.show()
 
     def test2():
+        X = np.random.uniform(0, 10, 1000) # 100 points.
+        Y = generate_random_poly(X, epsilon=10, roots=np.array([1, 3, 8]))
+        pyplt.scatter(X, Y)
+
+        MyRegression = MyLittleRegression(X, Y)
+        LinModel, MSE = MyRegression.train_model_for(rand_split_idx(len(X)), 3)
+        X_GridPoints = np.linspace(0, 10, 100)
+        Y_GridPointsPredicted = MyRegression.query_model(X_GridPoints)
+        print(f"Y_GridPointsPredicted = {Y_GridPointsPredicted}")
+        pyplt.plot(X_GridPoints, Y_GridPointsPredicted, color="r")
+        pyplt.show()
+        print(f"The MSE for the trained modle is: {MSE} ")
+
+    def test3():
+        print(simple_min_search(lambda x: (x-1)**2, -10, 10, 1e-5))
         pass
 
+    def test4(testPoints):
+        X = np.random.uniform(0, 10, testPoints)
+        Y = generate_random_poly(X, epsilon=10, roots=np.array([1, 3, 8]))
+        Trainer = MyLittleRegressionTrainer(10)
+        Deg, MinMSE, LittleRegression = Trainer.train_it_on(X, Y)
+        print(f"test4: deg = {Deg}")
+        X_GridPoints = np.linspace(0, 10, 100)
+        Y_points = LittleRegression.query_model(X_GridPoints)
+        pyplt.scatter(X, Y)
+        pyplt.plot(X_GridPoints, Y_points, color="r")
+        pyplt.show()
+
+    test4()
 
 
 

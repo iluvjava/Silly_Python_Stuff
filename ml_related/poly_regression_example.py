@@ -24,7 +24,7 @@ x_poly = polynomial_features.fit_transform(x) # The data point is fed in as a co
 
 model = LinearRegression()
 model.fit(x_poly, y)
-y_poly_pred = model.predict(x_poly)
+y_poly_pred = model.predict(x_poly) # Prediction is made on the Vandermonde matrix or something.
 
 rmse = np.sqrt(mean_squared_error(y,y_poly_pred))
 r2 = r2_score(y,y_poly_pred)
