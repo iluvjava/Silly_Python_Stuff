@@ -240,7 +240,7 @@ class MultiVarRidgeRegression(MyRegression):
         Class designed to optimize the lambda param to produce the best model for a given data set.
     """
 
-    def __init__(self, predictorsData, predictantData, deg = 2):
+    def __init__(self, predictorsData:NpArray, predictantData:NpArray, deg = 2):
         """
             initialize it with an instance of data points.
         :param predictorsData:
@@ -263,7 +263,13 @@ class MultiVarRidgeRegression(MyRegression):
         :return:
             Linear model, a number that is related to the quality of training (Usually MSE)
         """
-        Predictors_Test, Preditants_Training = [], []
+        Predictors_Training, Preditants_Training = self._Predictors[indices,...], self._Predictants[indices, ...]
+        n = indices.shape()[0]
+        Predictors_Test, Preditants_Test = self._Predictors[[I for I in range(n) if I not in indices], ...],\
+                                           self._Predictants[[I for I in range(n) if I not in indices], ...]
+
+        def TrainTheModel():
+            pass
 
 
     def query(self, x:NpArray):
