@@ -234,10 +234,47 @@ class MultiVarLassoRegression(MyRegression):
         """
         pass
 
+
 class MultiVarRidgeRegression(MyRegression):
     """
         Class designed to optimize the lambda param to produce the best model for a given data set.
     """
+
+    def __init__(self, predictorsData, predictantData, deg = 2):
+        """
+            initialize it with an instance of data points.
+        :param predictorsData:
+            This is the xData.
+        :param predictantData:
+            This is the yData.
+        """
+        self._Predictors, self._Predictants = predictorsData, predictantData
+        self._LinModel = None
+
+
+    def train_model_for(self, indices, alpha):
+        """
+            The list of indices are all the indices that should be linked to a training data set.
+            All other indices thare are not indices are assumed to be the validation set.
+        :param indices:
+            A list of indices. Vallina array is ok. s
+        :param alpha:
+            A parameters that can be tweaked by the trainer instance to obtain the best inputs.
+        :return:
+            Linear model, a number that is related to the quality of training (Usually MSE)
+        """
+        Predictors_Test, Preditants_Training = [], []
+
+
+    def query(self, x:NpArray):
+        """
+            Query the trained model with a list of data points.
+        :param x:
+            A set of query points for the model.
+        :return:
+            A all the predicted values for the model for that inputs.
+        """
+        pass
 
 
 class MyLittleMyRegression(MyRegression):
@@ -308,10 +345,18 @@ class MyLittleRegressionTrainer:
     """
         This class will take in a series of data, and then automatically determine the
         correct polynomial degree for the 2d regression model.
+
+        * This trainer can only train on parameter at a time.
     """
-    def __init__(self, maxPolyOrder:int):
-        assert maxPolyOrder < 20 and maxPolyOrder >= 1, "The maxpoly order is ridiculous. "
-        self._MaxPolyOrder = maxPolyOrder
+    def __init__(self, metaParamUpper):
+        """
+
+        :param metaParamUpper:
+            This parameter is the upper bound for the meta parameter that gets optimized
+            for the test error of the data set.
+        """
+        assert metaParamUpper < 20 and metaParamUpper >= 1, "The maxpoly order is ridiculous. "
+        self._MetaParamUpper = metaParamUpper
 
     def train_it_on(self, xData, yData, N=1):
         """
@@ -334,7 +379,7 @@ class MyLittleRegressionTrainer:
                 _, MSE = Regression.train_model_for(IdxList, int(polyDegree))
                 MSE_List[I] = MSE
             return sysstat.mean(MSE_List)
-        Argmin, min = golden_section_search(mse_error, 1, self._MaxPolyOrder, 1)
+        Argmin, min = golden_section_search(mse_error, 1, self._MetaParamUpper, 1)
         return Argmin, min, Regression
 
 
