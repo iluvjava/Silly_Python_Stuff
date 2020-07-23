@@ -7,6 +7,17 @@
         optimization problem we are able to fit the data and at the same time controls the
         complexity of the model.
 
+    * This file highlighted the meta-training of regression models in general. Which is important for generalizing
+    the process.
+
+    * For sparse data point, parametric regression is the best to choose
+
+    * So in some cases there can be colinearity, say: x1~x2, and x1, x2 are both predictors for y, this reduces the
+    amount of information if it's used for predicting with a linear regression model.
+
+    say x1 = a + b*x2, then we have y = w1*x1 + w2*x2 = w1*(a + b*x2) + w2*x2, which is just...
+    = w1*a + (w1*b + w2)*x2, and the parameters for one of the predictor doesn't have to exist at all.
+
 """
 import numpy as np
 from matplotlib import pyplot as pyplt
@@ -14,8 +25,10 @@ from matplotlib.pyplot import figure
 figure(num=None, figsize=(8, 6), dpi=150, facecolor='w', edgecolor='k')
 from typing import *
 NpArray = Type[np.array]
+# Basic functions from the system:
 from random import random as sysrnd
-
+import math
+import statistics as sysstat
 # Things for Ordinary Polynomial fitting:
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn import linear_model
@@ -126,7 +139,7 @@ def rand_split_idx(l: int, ratio=0.5):
 
 def simple_min_search(f, a, b, tol):
     """
-        Find the minimum of a univariable smooth function.
+        Find the minimum of a univariable smooth function using ternary search.
     :param f:
         function.
     :param a:
@@ -146,13 +159,65 @@ def simple_min_search(f, a, b, tol):
     return (m1+m2)/2, f((m1+m2)/2)
 
 
+def golden_section_search(f:callable, a, b, tol):
+    """
+        Perform a golden section search on the given single variable function.
+    :param f:
+        function, preferably unimodal.
+    :param a:
+        left boundary.
+    :param b:
+        right boundary
+    :param tol:
+        The tolerance you want.
+    :return:
+    """
+    assert a < b and tol > 0, "Something wrong with the input parameters. "
+    gr = (math.sqrt(5) + 1) / 2
+    c = b - (b - a) / gr
+    d = a + (b - a) / gr
+    while abs(c - d) > tol:
+        if f(c) < f(d):
+            b = d
+        else:
+            a = c
+        # We recompute both c and d here to avoid loss of precision which may lead to incorrect results or infinite loop
+        c = b - (b - a) / gr
+        d = a + (b - a) / gr
+    return (b + a) / 2, f((b+a)/2)
+
+
 class MyRegression:
 
     def train_model_for(self, indices, tweakingParam):
+        """
+            The list of indices are all the indices that should be linked to a training data set.
+            All other indices thare are not indices are assumed to be the validation set.
+        :param indices:
+            A list of indices. Vallina array is ok. s
+        :param tweakingParam:
+            A parameters that can be tweaked by the trainer instance to obtain the best inputs.
+        :return:
+            Linear model, a number that is related to the quality of training (Usually MSE)
+        """
+
+
+    def query(self, x:NpArray):
+        """
+            Query the trained model with a list of data points.
+        :param x:
+            A set of query points for the model.
+        :return:
+            A all the predicted values for the model for that inputs.
+        """
         pass
 
-    def query(self):
-        pass
+
+class MultiVarLassoRegression:
+    """
+        This is a class that takes in a list of features set and then use
+        the LassoRegression to fit the data. 
+    """
 
 
 class MyLittleMyRegression(MyRegression):
@@ -218,6 +283,8 @@ class MyLittleMyRegression(MyRegression):
         return self._LinModel
 
 
+
+
 class MyLittleRegressionTrainer:
     """
         This class will take in a series of data, and then automatically determine the
@@ -227,23 +294,29 @@ class MyLittleRegressionTrainer:
         assert maxPolyOrder < 20 and maxPolyOrder >= 1, "The maxpoly order is ridiculous. "
         self._MaxPolyOrder = maxPolyOrder
 
-    def train_it_on(self, xData, yData):
+    def train_it_on(self, xData, yData, N=1):
         """
             Trains on a certain set of data and figure out the best degree for the
             polynomial for the data.
         :param xData:
+            Row NParray vector.
         :param yData:
+            Row Nparray vector.
+        :param N:
+            The number of test and train instances for the model.
         :return:
             min deg, min MSE, Instance of Mylittle Regression.
         """
-        Test_Indices = rand_split_idx(len(xData))
+        Test_Indices = [rand_split_idx(len(xData)) for I in range(N)]
         Regression = MyLittleMyRegression(xData, yData)
         def mse_error(polyDegree):
-            _, MSE = Regression.train_model_for(Test_Indices, int(polyDegree))
-            return MSE
-        Argmin, min = simple_min_search(mse_error, 1, self._MaxPolyOrder, 1)
+            MSE_List = [None]*N
+            for I, IdxList in enumerate(Test_Indices):
+                _, MSE = Regression.train_model_for(IdxList, int(polyDegree))
+                MSE_List[I] = MSE
+            return sysstat.mean(MSE_List)
+        Argmin, min = golden_section_search(mse_error, 1, self._MaxPolyOrder, 1)
         return Argmin, min, Regression
-
 
 
 def main():
@@ -277,7 +350,7 @@ def main():
         X = np.random.uniform(0, 10, testPoints)
         Y = generate_random_poly(X, epsilon=10, roots=np.array([5, 8]))
         Trainer = MyLittleRegressionTrainer(10)
-        Deg, MinMSE, LittleRegression = Trainer.train_it_on(X, Y)
+        Deg, MinMSE, LittleRegression = Trainer.train_it_on(X, Y, N=10)
         print(f"test4: deg = {Deg}")
         X_GridPoints = np.linspace(0, 10, 100)
         Y_points = LittleRegression.query_model(X_GridPoints)
@@ -285,10 +358,7 @@ def main():
         pyplt.plot(X_GridPoints, Y_points, color="r")
         pyplt.show()
 
-    test4(200)
-
-
-
+    test4(300)
 
 
 if __name__ == "__main__":
