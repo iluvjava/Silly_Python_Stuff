@@ -18,6 +18,10 @@
     say x1 = a + b*x2, then we have y = w1*x1 + w2*x2 = w1*(a + b*x2) + w2*x2, which is just...
     = w1*a + (w1*b + w2)*x2, and the parameters for one of the predictor doesn't have to exist at all.
 
+    * On the other than the ridge regression is good at reducing the model complexity, if for some reasons, one has
+    to use a model containing a lot of DF, then it's better to use the ridge regression as a way to reduce the complexity
+    of the model.
+
 """
 import numpy as np
 from matplotlib import pyplot as pyplt
@@ -213,7 +217,7 @@ class MyRegression:
         pass
 
 
-class MultiVarLassoRegression:
+class MultiVarLassoRegression(MyRegression):
     """
         This is a class that takes in a list of features set and then use
         the LassoRegression to fit the data.
@@ -229,6 +233,11 @@ class MultiVarLassoRegression:
             A NP array, 2d.
         """
         pass
+
+class MultiVarRidgeRegression(MyRegression):
+    """
+        Class designed to optimize the lambda param to produce the best model for a given data set.
+    """
 
 
 class MyLittleMyRegression(MyRegression):
@@ -275,8 +284,9 @@ class MyLittleMyRegression(MyRegression):
         :return:
             Vanilla flavor array for the predicted data points.
         """
-
+        assert self._LinModel is not None, "You can't query the model before actually training the model. "
         Vandermonde = PolynomialFeatures(degree=len(self._LinModel.coef_) - 1)
+        # create the vandermonde matrix base on the df of the model.
         Vandermonde = Vandermonde.fit_transform(x[:,np.newaxis])
         Predicted = self._LinModel.predict(Vandermonde)
         return Predicted
