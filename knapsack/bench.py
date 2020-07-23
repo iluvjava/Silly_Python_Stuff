@@ -54,8 +54,12 @@ def bench_bb_with_dp(trials:int):
     dp_time, dp_opt = run_solve_on(ProblemList, dp_solve)
     CSVHeader = ["bb_time", "dp_time", "bb_opt", "dp_opt"]
     CSVCols = [bb_time, dp_time, bb_opt, dp_opt]
+    def MakeJsonResults():
+        Json = {}
+        Json["bb_time"], Json["dp_time"] = bb_time, dp_time
+        return Json
     core.csv_col_save("bb, dp bench.csv", colHeader= CSVHeader, cols=CSVCols)
-    quick_json.json_encode([CSVHeader, CSVCols], filename="bb, dp bench.json")
+    quick_json.json_encode(MakeJsonResults(), filename="bb, dp bench.json")
 
 
     print("Tests Detailed: ")

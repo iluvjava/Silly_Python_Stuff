@@ -216,8 +216,19 @@ class MyRegression:
 class MultiVarLassoRegression:
     """
         This is a class that takes in a list of features set and then use
-        the LassoRegression to fit the data. 
+        the LassoRegression to fit the data.
+
+        * A lasso regression should be good for handling data set that has potential colinearity for
+        the predictors and stuff.
     """
+    @staticmethod
+    def collin_3d_data_points():
+        """
+            x1~x2 with colinearity.
+        :return:
+            A NP array, 2d.
+        """
+        pass
 
 
 class MyLittleMyRegression(MyRegression):
@@ -281,8 +292,6 @@ class MyLittleMyRegression(MyRegression):
     @property
     def LinModel(self):
         return self._LinModel
-
-
 
 
 class MyLittleRegressionTrainer:
