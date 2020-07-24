@@ -206,7 +206,7 @@ class MyRegression:
         :return:
             Linear model, a number that is related to the quality of training (Usually MSE)
         """
-
+        raise Exception("Empty Shell method. ")
 
     def query(self, x:NpArray):
         """
@@ -216,7 +216,8 @@ class MyRegression:
         :return:
             A all the predicted values for the model for that inputs.
         """
-        pass
+        raise Exception("Empty Shell method. ")
+
 
 
 class MultiVarLassoRegression(MyRegression):
@@ -302,13 +303,21 @@ class MultiVarRidgeRegression(MyRegression):
         """
             Prepare all the rando data point for regression training,
             (x1, x2)~y
+            * Predictors are going to be in a unit square of [-1, 1]X[-1, 1], normally distributed.
+            * The varinace on the preditants are going to be normal too.
+            * Second order and terms of interactions are involved into the random model.
         :return:
             x, y
         """
-        pass
+        Rnd_Predictors = np.random.normal(loc=0, scale=1, size=(N, 2))
+        def LinearModel(predictors, w1, w2, w3, w4):
+            Expression = lambda x, y: w1*x + w2*y + w3*x*y + w4*x**2
+            Y = np.array([Expression(T[0], T[1]) + np.random(loc = 0, scale = 0.3) for T in predictors])
+            return Y
+        return Rnd_Predictors, LinearModel(Rnd_Predictors, 1, 1, 0.5, 0.2)
 
 
-class MyLittleMyRegression(MyRegression):
+class MyLittleRegression(MyRegression):
     """
         Train a model, get the MSE, and see how the validation errors changes with DF of the model.
         It's only for 2d.
@@ -379,15 +388,24 @@ class MyLittleRegressionTrainer:
 
         * This trainer can only train on parameter at a time.
     """
-    def __init__(self, metaParamUpper):
+    def __init__(self, metaParamUpper, regressionTrainee):
         """
 
         :param metaParamUpper:
             This parameter is the upper bound for the meta parameter that gets optimized
             for the test error of the data set.
+            There is a limit imposes on the meta parameter of the model for the following reasons:
+            1. if the meta parameters are the order of tyhe polynomials, then 20 is huge.
+            2. There is no need even if it's ridge or lasso regression because the sklearn is going
+            to normalize the model for you.
+
+        :param regressionTrainee:
+            An instance of the regression class, possible represent a model together boundle with its data.
+
         """
-        assert metaParamUpper < 20 and metaParamUpper >= 1, "The maxpoly order is ridiculous. "
+        assert metaParamUpper < 20 and metaParamUpper >= 1, "I don't want the meta-param to be too big."
         self._MetaParamUpper = metaParamUpper
+        self._Trainee = regressionTrainee
 
     def train_it_on(self, xData, yData, N=1):
         """
@@ -400,10 +418,10 @@ class MyLittleRegressionTrainer:
         :param N:
             The number of test and train instances for the model.
         :return:
-            min deg, min MSE, Instance of Mylittle Regression.
+            min meta-param, min MSE, Instance of Mylittle Regression.
         """
         Test_Indices = [rand_split_idx(len(xData)) for I in range(N)]
-        Regression = MyLittleMyRegression(xData, yData)
+        Regression = self._Trainee
         def mse_error(polyDegree):
             MSE_List = [None]*N
             for I, IdxList in enumerate(Test_Indices):
@@ -428,7 +446,7 @@ def main():
         Y = generate_random_poly(X, epsilon=10, roots=np.array([1, 3, 8]))
         pyplt.scatter(X, Y)
 
-        MyRegression = MyLittleMyRegression(X, Y)
+        MyRegression = MyLittleRegression(X, Y)
         LinModel, MSE = MyRegression.train_model_for(rand_split_idx(len(X)), 3)
         X_GridPoints = np.linspace(0, 10, 100)
         Y_GridPointsPredicted = MyRegression.query_model(X_GridPoints)
@@ -444,7 +462,7 @@ def main():
     def test4(testPoints):
         X = np.random.uniform(0, 10, testPoints)
         Y = generate_random_poly(X, epsilon=10, roots=np.array([5, 8]))
-        Trainer = MyLittleRegressionTrainer(10)
+        Trainer = MyLittleRegressionTrainer(10, MyLittleRegression(X, Y))
         Deg, MinMSE, LittleRegression = Trainer.train_it_on(X, Y, N=10)
         print(f"test4: deg = {Deg}")
         X_GridPoints = np.linspace(0, 10, 100)
@@ -453,7 +471,10 @@ def main():
         pyplt.plot(X_GridPoints, Y_points, color="r")
         pyplt.show()
 
-    test4(300)
+    def test5():
+        pass
+
+    test4(200)
 
 
 if __name__ == "__main__":
