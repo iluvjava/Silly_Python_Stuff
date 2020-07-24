@@ -11,6 +11,8 @@
     the process.
 
     * For sparse data point, parametric regression is the best to choose
+        - For dence data points, we have to either use some down-sampling
+        - Or we have to use non-parametric regression.
 
     * So in some cases there can be colinearity, say: x1~x2, and x1, x2 are both predictors for y, this reduces the
     amount of information if it's used for predicting with a linear regression model.
@@ -249,6 +251,7 @@ class MultiVarRidgeRegression(MyRegression):
             This is the yData.
         """
         self._Predictors, self._Predictants = predictorsData, predictantData
+        self._Deg = deg
         self._LinModel = None
 
 
@@ -264,12 +267,20 @@ class MultiVarRidgeRegression(MyRegression):
             Linear model, a number that is related to the quality of training (Usually MSE)
         """
         Predictors_Training, Preditants_Training = self._Predictors[indices,...], self._Predictants[indices, ...]
-        n = indices.shape()[0]
+        n = indices.shape[0]
         Predictors_Test, Preditants_Test = self._Predictors[[I for I in range(n) if I not in indices], ...],\
                                            self._Predictants[[I for I in range(n) if I not in indices], ...]
-
-        def TrainTheModel():
-            pass
+        def TrainTheModel(predictors, predictants, alpha, deg):
+            Vandermonde = PolynomialFeatures(degree=deg)
+            Vandermonde = Vandermonde.fit_transform(predictors)
+            LinModel = linear_model.ridge_regression(alpha=alpha)
+            LinModel = LinModel.fit(Vandermonde, predictants)
+            return LinModel
+        self._LinModel = TrainTheModel(Predictors_Training, Preditants_Training)
+        Predicted = self.query(Preditants_Test)
+        MSE = sum((Predicted - Preditants_Test)**2)
+        MSE /= n
+        return self._LinModel, MSE
 
 
     def query(self, x:NpArray):
@@ -280,6 +291,16 @@ class MultiVarRidgeRegression(MyRegression):
         :return:
             A all the predicted values for the model for that inputs.
         """
+        assert self._LinModel is not None, "You can't query the model when it's not trained yet. "
+        PolyFeatures = PolynomialFeatures(self._Deg)
+        Vandermonde = PolyFeatures.fit_transform(x)
+        Predicted = self._LinModel.predict(Vandermonde)
+        return Predicted
+
+
+    @staticmethod
+    def random_3d_regression_data():
+
         pass
 
 
