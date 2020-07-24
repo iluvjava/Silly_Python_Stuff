@@ -282,7 +282,6 @@ class MultiVarRidgeRegression(MyRegression):
         MSE /= n
         return self._LinModel, MSE
 
-
     def query(self, x:NpArray):
         """
             Query the trained model with a list of data points.
@@ -299,8 +298,13 @@ class MultiVarRidgeRegression(MyRegression):
 
 
     @staticmethod
-    def random_3d_regression_data():
-
+    def random_3d_regression_data(N:int):
+        """
+            Prepare all the rando data point for regression training,
+            (x1, x2)~y
+        :return:
+            x, y
+        """
         pass
 
 
