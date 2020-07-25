@@ -168,6 +168,9 @@ def simple_min_search(f, a, b, tol):
 def golden_section_search(f:callable, a, b, tol):
     """
         Perform a golden section search on the given single variable function.
+
+        * This kind of search will try to reuse on the point from that last iteration, in theory it
+        will reduce the total number of evaluations involved for the function.
     :param f:
         function, preferably unimodal.
     :param a:
@@ -179,17 +182,22 @@ def golden_section_search(f:callable, a, b, tol):
     :return:
     """
     assert a < b and tol > 0, "Something wrong with the input parameters. "
-    gr = (math.sqrt(5) + 1) / 2
-    c = b - (b - a) / gr
-    d = a + (b - a) / gr
+    phi = (math.sqrt(5) + 1) / 2
+    c = b - (b - a) / phi
+    d = a + (b - a) / phi
+    f_c, f_d = f(c), f(d)
     while abs(c - d) > tol:
-        if f(c) < f(d):
+        if f_c < f_d:
             b = d
+            f_d = f_c
+            f_c = f(b - (b - a) / phi)
         else:
             a = c
+            f_c = f_d
+            f_d = f(a + (b - a) / phi)
         # We recompute both c and d here to avoid loss of precision which may lead to incorrect results or infinite loop
-        c = b - (b - a) / gr
-        d = a + (b - a) / gr
+        c = b - (b - a) / phi
+        d = a + (b - a) / phi
     return (b + a) / 2, f((b+a)/2)
 
 
@@ -218,6 +226,12 @@ class MyRegression:
         """
         raise Exception("Empty Shell method. ")
 
+    def size(self):
+        """
+
+        :return:
+            The number of data points in the model.
+        """
 
 
 class MultiVarLassoRegression(MyRegression):
@@ -247,19 +261,33 @@ class MultiVarRidgeRegression(MyRegression):
         """
             initialize it with an instance of data points.
         :param predictorsData:
-            This is the xData.
+            This is the xData, must be a 1d row np vector.
         :param predictantData:
-            This is the yData.
+            This is the yData, must be a 1d row np vector.
         """
-        self._Predictors, self._Predictants = predictorsData, predictantData
+        self._Predictors, self._Predictants = np.copy(predictorsData), np.copy(predictantData)
+        if len(self._Predictors.shape) == 1:
+            self._Predictors = self._Predictors[:, np.newaxis]
         self._Deg = deg
         self._LinModel = None
 
+    @property
+    def Predictors(self):
+        return self._Predictors
+    @property
+    def Predictants(self):
+        return self._Predictants
+
+    @property
+    def LinModel(self):
+        return self._LinModel
 
     def train_model_for(self, indices, alpha):
         """
             The list of indices are all the indices that should be linked to a training data set.
             All other indices thare are not indices are assumed to be the validation set.
+
+            * Each time it's trained, the model in the field will get updated.
         :param indices:
             A list of indices. Vallina array is ok. s
         :param alpha:
@@ -268,17 +296,18 @@ class MultiVarRidgeRegression(MyRegression):
             Linear model, a number that is related to the quality of training (Usually MSE)
         """
         Predictors_Training, Preditants_Training = self._Predictors[indices,...], self._Predictants[indices, ...]
-        n = indices.shape[0]
+        n = self._Predictors.shape[0]
         Predictors_Test, Preditants_Test = self._Predictors[[I for I in range(n) if I not in indices], ...],\
                                            self._Predictants[[I for I in range(n) if I not in indices], ...]
         def TrainTheModel(predictors, predictants, alpha, deg):
             Vandermonde = PolynomialFeatures(degree=deg)
             Vandermonde = Vandermonde.fit_transform(predictors)
-            LinModel = linear_model.ridge_regression(alpha=alpha)
+            LinModel = linear_model.Ridge(alpha=alpha)
             LinModel = LinModel.fit(Vandermonde, predictants)
             return LinModel
-        self._LinModel = TrainTheModel(Predictors_Training, Preditants_Training)
-        Predicted = self.query(Preditants_Test)
+
+        self._LinModel = TrainTheModel(Predictors_Training, Preditants_Training, alpha=alpha, deg=self._Deg)
+        Predicted = self.query(Predictors_Test)
         MSE = sum((Predicted - Preditants_Test)**2)
         MSE /= n
         return self._LinModel, MSE
@@ -293,10 +322,14 @@ class MultiVarRidgeRegression(MyRegression):
         """
         assert self._LinModel is not None, "You can't query the model when it's not trained yet. "
         PolyFeatures = PolynomialFeatures(self._Deg)
+        if len(x.shape) == 1:
+            x = x[:, np.newaxis]
         Vandermonde = PolyFeatures.fit_transform(x)
         Predicted = self._LinModel.predict(Vandermonde)
         return Predicted
 
+    def size(self):
+        return len(self._Predictors)
 
     @staticmethod
     def random_3d_regression_data(N:int):
@@ -312,7 +345,7 @@ class MultiVarRidgeRegression(MyRegression):
         Rnd_Predictors = np.random.normal(loc=0, scale=1, size=(N, 2))
         def LinearModel(predictors, w1, w2, w3, w4):
             Expression = lambda x, y: w1*x + w2*y + w3*x*y + w4*x**2
-            Y = np.array([Expression(T[0], T[1]) + np.random(loc = 0, scale = 0.3) for T in predictors])
+            Y = np.array([Expression(T[0], T[1]) + np.random.normal(loc = 0, scale = 0.3) for T in predictors])
             return Y
         return Rnd_Predictors, LinearModel(Rnd_Predictors, 1, 1, 0.5, 0.2)
 
@@ -343,6 +376,7 @@ class MyLittleRegression(MyRegression):
         """
         assert sum(1 for I in indices if (I < 0 or I >= len(self.XDataPoints))) == 0, \
             f"Invalid Trainning Indices: {indices}, len of data: {len(self.XDataPoints)}"
+        polyOrder = int(polyOrder) # this might not be int if query from the trainer.
         X_train, X_test = np.array([self.XDataPoints[I] for I in indices]), \
                           np.array([self.XDataPoints[I] for I in range(len(self.XDataPoints)) if I not in indices])
         Y_train, Y_test = np.array([self.YDataPoints[I] for I in indices]), \
@@ -352,8 +386,7 @@ class MyLittleRegression(MyRegression):
         MSE, _ =  regression_MSE_compute(LinModel, X_test, Y_test)
         return LinModel, MSE
 
-
-    def query_model(self, x:NpArray):
+    def query(self, x:NpArray):
         """
             Query the model with a list of points, and it will return the prediction.
         :param x:
@@ -367,6 +400,9 @@ class MyLittleRegression(MyRegression):
         Vandermonde = Vandermonde.fit_transform(x[:,np.newaxis])
         Predicted = self._LinModel.predict(Vandermonde)
         return Predicted
+
+    def size(self):
+        return len(self._X)
 
     @property
     def XDataPoints(self):
@@ -388,47 +424,47 @@ class MyLittleRegressionTrainer:
 
         * This trainer can only train on parameter at a time.
     """
-    def __init__(self, metaParamUpper, regressionTrainee):
+    def __init__(self, metaParamLower, metaParamUpper, regressionTrainee):
         """
 
         :param metaParamUpper:
             This parameter is the upper bound for the meta parameter that gets optimized
             for the test error of the data set.
-            There is a limit imposes on the meta parameter of the model for the following reasons:
-            1. if the meta parameters are the order of tyhe polynomials, then 20 is huge.
-            2. There is no need even if it's ridge or lasso regression because the sklearn is going
-            to normalize the model for you.
-
+        :param metaParamLower:
+            This is the lowerbound for the tunning of the meta parameter of the model.
         :param regressionTrainee:
             An instance of the regression class, possible represent a model together boundle with its data.
-
         """
-        assert metaParamUpper < 20 and metaParamUpper >= 1, "I don't want the meta-param to be too big."
-        self._MetaParamUpper = metaParamUpper
+
+        self._MetaParamUpper, self._MetaParamLower = metaParamUpper, metaParamLower
         self._Trainee = regressionTrainee
 
-    def train_it_on(self, xData, yData, N=1):
+    def train_it_on(self, N=1, tol=1):
         """
             Trains on a certain set of data and figure out the best degree for the
             polynomial for the data.
+
         :param xData:
             Row NParray vector.
         :param yData:
             Row Nparray vector.
         :param N:
             The number of test and train instances for the model.
+        :param tol:
+            This is the delta vicinity you want for the the meta-prameter.
         :return:
             min meta-param, min MSE, Instance of Mylittle Regression.
         """
-        Test_Indices = [rand_split_idx(len(xData)) for I in range(N)]
+        Test_Indices = [rand_split_idx(self._Trainee.size()) for I in range(N)]
         Regression = self._Trainee
-        def mse_error(polyDegree):
+        def mse_error(metaParam):
             MSE_List = [None]*N
             for I, IdxList in enumerate(Test_Indices):
-                _, MSE = Regression.train_model_for(IdxList, int(polyDegree))
+                _, MSE = Regression.train_model_for(IdxList, metaParam)
                 MSE_List[I] = MSE
+            print(f"MetaParam Trial: {metaParam}")
             return sysstat.mean(MSE_List)
-        Argmin, min = golden_section_search(mse_error, 1, self._MetaParamUpper, 1)
+        Argmin, min = golden_section_search(mse_error, self._MetaParamLower, self._MetaParamUpper, tol)
         return Argmin, min, Regression
 
 
@@ -462,20 +498,46 @@ def main():
     def test4(testPoints):
         X = np.random.uniform(0, 10, testPoints)
         Y = generate_random_poly(X, epsilon=10, roots=np.array([5, 8]))
-        Trainer = MyLittleRegressionTrainer(10, MyLittleRegression(X, Y))
-        Deg, MinMSE, LittleRegression = Trainer.train_it_on(X, Y, N=10)
-        print(f"test4: deg = {Deg}")
+
+        Trainer1 = MyLittleRegressionTrainer(1, 10, MyLittleRegression(X, Y))
+        Trainer2 = MyLittleRegressionTrainer(0, 10, MultiVarRidgeRegression(X, Y, deg=5))
+
+        Deg, MinMSE, LittleRegression = Trainer1.train_it_on(N=20)
+        print(f"test4, simple regression get deg = {Deg}, min MSE = {MinMSE}")
+        Alpha, MinMSE, RidgeRegression = Trainer2.train_it_on(N=20)
+        print(f"test4 ridge regression get alpha = {Alpha}, min MSE = {MinMSE}")
+
+
         X_GridPoints = np.linspace(0, 10, 100)
-        Y_points = LittleRegression.query_model(X_GridPoints)
+        Y_points = LittleRegression.query(X_GridPoints)
         pyplt.scatter(X, Y)
         pyplt.plot(X_GridPoints, Y_points, color="r")
+
+        Y_points = RidgeRegression.query(X_GridPoints)
+        pyplt.scatter(X, Y)
+        pyplt.plot(X_GridPoints, Y_points, color="g")
         pyplt.show()
 
     def test5():
-        pass
+        X, Y = MultiVarRidgeRegression.random_3d_regression_data(3)
+        print(X, Y)
+
+    def test6():
+        X, Y = MultiVarRidgeRegression.random_3d_regression_data(30)
+        TheRegression = MultiVarRidgeRegression(X, Y, deg=3)
+        LinModel, MSE = TheRegression.train_model_for(rand_split_idx(len(X)), alpha=0)
+        print(f"Ridge Linear Model coef:{LinModel.coef_}")
+        print(f"Ridge MSe: {MSE}")
+
+    def test7():
+        X, Y = MultiVarRidgeRegression.random_3d_regression_data(20)
+        Trainee = MultiVarRidgeRegression(X, Y, deg=3)
+        Trainer = MyLittleRegressionTrainer(metaParamLower=0, metaParamUpper=20, regressionTrainee=Trainee)
+        Argmin, Min, RegressionModel = Trainer.train_it_on(N=5, tol=0.2)
+        print(f"Argmin: {Argmin}, Min: {Min}")
+        print(f"regression Model Coefficients: P {RegressionModel.LinModel.coef_}")
 
     test4(200)
-
 
 if __name__ == "__main__":
     main()
