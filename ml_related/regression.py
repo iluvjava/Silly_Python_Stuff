@@ -36,7 +36,7 @@ from random import random as sysrnd
 import math
 import statistics as sysstat
 # Things for Ordinary Polynomial fitting:
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import PolynomialFeatures, scale
 from sklearn import linear_model
 # End
 
@@ -252,24 +252,34 @@ class MultiVarLassoRegression(MyRegression):
         pass
 
 
-class MultiVarRidgeRegression(MyRegression):
+class MultiVarRegularizedRegression(MyRegression):
     """
         Class designed to optimize the lambda param to produce the best model for a given data set.
     """
 
-    def __init__(self, predictorsData:NpArray, predictantData:NpArray, deg=2):
+    def __init__(self, predictorsData:NpArray,
+                 predictantData:NpArray,
+                 deg=2,
+                 modelTrainingFxn:callable=None):
         """
             initialize it with an instance of data points.
         :param predictorsData:
             This is the xData, must be a 1d row np vector.
         :param predictantData:
             This is the yData, must be a 1d row np vector.
+        :param modelTrainingFxn:
+            This is going to be one of the selections of static methods in this class
+            that specifies the training style of the algorithm.
+
+            * The meta parameters depends...
         """
         self._Predictors, self._Predictants = np.copy(predictorsData), np.copy(predictantData)
         if len(self._Predictors.shape) == 1:
             self._Predictors = self._Predictors[:, np.newaxis]
         self._Deg = deg
         self._LinModel = None
+        self._TrainingStyle = MultiVarRegularizedRegression.train_model_ridge_style if modelTrainingFxn is None\
+            else modelTrainingFxn
 
     @property
     def Predictors(self):
@@ -299,18 +309,27 @@ class MultiVarRidgeRegression(MyRegression):
         n = self._Predictors.shape[0]
         Predictors_Test, Preditants_Test = self._Predictors[[I for I in range(n) if I not in indices], ...],\
                                            self._Predictants[[I for I in range(n) if I not in indices], ...]
-        def TrainTheModel(predictors, predictants, alpha, deg):
-            Vandermonde = PolynomialFeatures(degree=deg)
-            Vandermonde = Vandermonde.fit_transform(predictors)
-            LinModel = linear_model.Ridge(alpha=alpha)
-            LinModel = LinModel.fit(Vandermonde, predictants)
-            return LinModel
-
-        self._LinModel = TrainTheModel(Predictors_Training, Preditants_Training, alpha=alpha, deg=self._Deg)
+        self._LinModel = self._TrainingStyle(Predictors_Training, Preditants_Training, alpha=alpha, deg=self._Deg)
         Predicted = self.query(Predictors_Test)
         MSE = sum((Predicted - Preditants_Test)**2)
         MSE /= n
         return self._LinModel, MSE
+
+    @staticmethod
+    def train_model_ridge_style(predictors, predictants, alpha, deg):
+        Vandermonde = PolynomialFeatures(degree=deg)
+        Vandermonde = Vandermonde.fit_transform(predictors)
+        LinModel = linear_model.Ridge(alpha=alpha)
+        LinModel = LinModel.fit(Vandermonde, predictants)
+        return LinModel
+
+    @staticmethod
+    def train_model_lasso_style(predictors, predictants, alpha, deg):
+        Vandermonde = PolynomialFeatures(degree=deg)
+        Vandermonde = Vandermonde.fit_transform(predictors)
+        LinModel = linear_model.Lasso(alpha=alpha)
+        LinModel = LinModel.fit(Vandermonde, predictants)
+        return LinModel
 
     def query(self, x:NpArray):
         """
@@ -331,10 +350,7 @@ class MultiVarRidgeRegression(MyRegression):
     def size(self):
         return len(self._Predictors)
 
-    @property
-    def CoreTrainingMethod(self):
 
-        pass
 
     @staticmethod
     def random_3d_regression_data(N:int):
@@ -464,6 +480,7 @@ class MyLittleRegressionTrainer:
         Regression = self._Trainee
         def mse_error(metaParam):
             MSE_List = [None]*N
+            print(f"Trainner checking metaparam: {metaParam}")
             for I, IdxList in enumerate(Test_Indices):
                 _, MSE = Regression.train_model_for(IdxList, metaParam)
                 MSE_List[I] = MSE
@@ -500,22 +517,36 @@ def main():
         pass
 
     def test4(testPoints):
-        X = np.random.uniform(0, 10, testPoints)
-        Y = generate_random_poly(X, epsilon=10, roots=np.array([5, 8]))
+        X = np.random.uniform(-10, 10, testPoints)
+        Y = generate_random_poly(X, epsilon=2, roots=np.array([-1, 1]))
+        X, Y = scale(X), scale(Y)
 
         Trainer1 = MyLittleRegressionTrainer(1, 10, MyLittleRegression(X, Y))
-        Trainer2 = MyLittleRegressionTrainer(0, 10, MultiVarRidgeRegression(X, Y, deg=5))
+        Trainer2 = MyLittleRegressionTrainer(0, 10, MultiVarRegularizedRegression(X, Y, deg=10))
+        Trainer3 = MyLittleRegressionTrainer(0, 1, MultiVarRegularizedRegression(
+            X,
+            Y,
+            deg=10,
+            modelTrainingFxn=MultiVarRegularizedRegression.train_model_lasso_style))
 
-        Deg, MinMSE, LittleRegression = Trainer1.train_it_on(N=20)
+        Deg, MinMSE, LittleRegression = Trainer1.train_it_on(N=20, tol=1)
         print(f"test4, simple regression get deg = {Deg}, min MSE = {MinMSE}")
-        Alpha, MinMSE, RidgeRegression = Trainer2.train_it_on(N=20)
+        Alpha, MinMSE, RidgeRegression = Trainer2.train_it_on(N=20, tol=0.01)
         print(f"test4 ridge regression get alpha = {Alpha}, min MSE = {MinMSE}")
+        print(f"Ridge Coefficients: {RidgeRegression.LinModel.coef_}")
+        Alpha, MinMSE, LassoRegression = Trainer3.train_it_on(N=20, tol=0.01)
+        print(f"test4 lasso regression get alpha = {Alpha}, min MSE = {MinMSE}")
+        print(f"Lasso Coefficients: {LassoRegression.LinModel.coef_}")
 
 
-        X_GridPoints = np.linspace(0, 10, 100)
+        X_GridPoints = np.linspace(min(X), max(X), 100)
         Y_points = LittleRegression.query(X_GridPoints)
-        pyplt.scatter(X, Y)
+        pyplt.scatter(X, Y, color="k")
         pyplt.plot(X_GridPoints, Y_points, color="r")
+
+        Y_points = LassoRegression.query(X_GridPoints)
+        pyplt.scatter(X, Y)
+        pyplt.plot(X_GridPoints, Y_points, color="b")
 
         Y_points = RidgeRegression.query(X_GridPoints)
         pyplt.scatter(X, Y)
@@ -523,21 +554,21 @@ def main():
         pyplt.show()
 
     def test5():
-        X, Y = MultiVarRidgeRegression.random_3d_regression_data(3)
+        X, Y = MultiVarRegularizedRegression.random_3d_regression_data(3)
         print(X, Y)
 
     def test6():
-        X, Y = MultiVarRidgeRegression.random_3d_regression_data(30)
-        TheRegression = MultiVarRidgeRegression(X, Y, deg=3)
+        X, Y = MultiVarRegularizedRegression.random_3d_regression_data(30)
+        TheRegression = MultiVarRegularizedRegression(X, Y, deg=3)
         LinModel, MSE = TheRegression.train_model_for(rand_split_idx(len(X)), alpha=0)
         print(f"Ridge Linear Model coef:{LinModel.coef_}")
         print(f"Ridge MSe: {MSE}")
 
     def test7():
-        X, Y = MultiVarRidgeRegression.random_3d_regression_data(20)
-        Trainee = MultiVarRidgeRegression(X, Y, deg=3)
+        X, Y = MultiVarRegularizedRegression.random_3d_regression_data(20)
+        Trainee = MultiVarRegularizedRegression(X, Y, deg=3)
         Trainer = MyLittleRegressionTrainer(metaParamLower=0, metaParamUpper=20, regressionTrainee=Trainee)
-        Argmin, Min, RegressionModel = Trainer.train_it_on(N=5, tol=0.2)
+        Argmin, Min, RegressionModel = Trainer.train_it_on(N=5, tol=0.1)
         print(f"Argmin: {Argmin}, Min: {Min}")
         print(f"regression Model Coefficients: P {RegressionModel.LinModel.coef_}")
 
