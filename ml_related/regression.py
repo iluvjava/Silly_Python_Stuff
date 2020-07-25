@@ -257,7 +257,7 @@ class MultiVarRidgeRegression(MyRegression):
         Class designed to optimize the lambda param to produce the best model for a given data set.
     """
 
-    def __init__(self, predictorsData:NpArray, predictantData:NpArray, deg = 2):
+    def __init__(self, predictorsData:NpArray, predictantData:NpArray, deg=2):
         """
             initialize it with an instance of data points.
         :param predictorsData:
@@ -330,6 +330,11 @@ class MultiVarRidgeRegression(MyRegression):
 
     def size(self):
         return len(self._Predictors)
+
+    @property
+    def CoreTrainingMethod(self):
+
+        pass
 
     @staticmethod
     def random_3d_regression_data(N:int):
@@ -462,7 +467,6 @@ class MyLittleRegressionTrainer:
             for I, IdxList in enumerate(Test_Indices):
                 _, MSE = Regression.train_model_for(IdxList, metaParam)
                 MSE_List[I] = MSE
-            print(f"MetaParam Trial: {metaParam}")
             return sysstat.mean(MSE_List)
         Argmin, min = golden_section_search(mse_error, self._MetaParamLower, self._MetaParamUpper, tol)
         return Argmin, min, Regression
