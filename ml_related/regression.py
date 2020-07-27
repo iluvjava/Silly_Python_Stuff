@@ -234,27 +234,20 @@ class MyRegression:
         """
 
 
-class MultiVarLassoRegression(MyRegression):
-    """
-        This is a class that takes in a list of features set and then use
-        the LassoRegression to fit the data.
-
-        * A lasso regression should be good for handling data set that has potential colinearity for
-        the predictors and stuff.
-    """
-    @staticmethod
-    def collin_3d_data_points():
-        """
-            x1~x2 with colinearity.
-        :return:
-            A NP array, 2d.
-        """
-        pass
-
-
 class MultiVarRegularizedRegression(MyRegression):
     """
         Class designed to optimize the lambda param to produce the best model for a given data set.
+
+        * This instance of the model will be trained with the alpha parameters.
+        * Prove dynamic swappable static functions for instances of the class to define different training
+        routine of the model.
+        1. Lasso Regression:
+            Best for eliminating colinearity for multi-variable models. However the alpha funciton against
+            training errors for MSE is not convex.
+        2. Ridge regression:
+            Smooth out some of the parametesrs for a model with a lot of non-linearity to prevent over fitting.
+        3. LassoLARS Regression:
+            Uses specialized optimizer rather than the general coordinate descended optimizer.
     """
 
     def __init__(self, predictorsData:NpArray,
@@ -284,6 +277,7 @@ class MultiVarRegularizedRegression(MyRegression):
     @property
     def Predictors(self):
         return self._Predictors
+    
     @property
     def Predictants(self):
         return self._Predictants
@@ -317,6 +311,16 @@ class MultiVarRegularizedRegression(MyRegression):
 
     @staticmethod
     def train_model_ridge_style(predictors, predictants, alpha, deg):
+        """
+            This is dispatchable static method for an instance of the class. 
+            Passing this parameter in for the constructor will allow the model to be trained with 
+            certain regularization.
+        :param predictors: 
+        :param predictants: 
+        :param alpha: 
+        :param deg: 
+        :return: 
+        """
         Vandermonde = PolynomialFeatures(degree=deg)
         Vandermonde = Vandermonde.fit_transform(predictors)
         LinModel = linear_model.Ridge(alpha=alpha)
@@ -325,9 +329,25 @@ class MultiVarRegularizedRegression(MyRegression):
 
     @staticmethod
     def train_model_lasso_style(predictors, predictants, alpha, deg):
+        """
+            Dispatachable methodd for an instance of the class that regularize the model with lasso regression。
+        :param predictors:
+        :param predictants:
+        :param alpha:
+        :param deg:
+        :return:
+        """
         Vandermonde = PolynomialFeatures(degree=deg)
         Vandermonde = Vandermonde.fit_transform(predictors)
         LinModel = linear_model.Lasso(alpha=alpha)
+        LinModel = LinModel.fit(Vandermonde, predictants)
+        return LinModel
+
+    @staticmethod
+    def train_model_lassoLARS_style(predictors, predictants, alpha, deg):
+        Vandermonde = PolynomialFeatures(degree=deg)
+        Vandermonde = Vandermonde.fit_transform(predictors)
+        LinModel = linear_model.LassoLars(alpha=alpha)
         LinModel = LinModel.fit(Vandermonde, predictants)
         return LinModel
 
@@ -370,6 +390,13 @@ class MultiVarRegularizedRegression(MyRegression):
             return Y
         return Rnd_Predictors, LinearModel(Rnd_Predictors, 1, 1, 0.5, 0.2)
 
+class SGDRegression(MyRegression):
+    """
+        We uses the GSD regressor in the sklearn package to do some stuff, which gives more
+        flexibility to our model under trainings.
+    """
+    def __init__(self):
+        pass
 
 class MyLittleRegression(MyRegression):
     """
@@ -517,7 +544,7 @@ def main():
         pass
 
     def test4(testPoints):
-        X = np.random.uniform(-10, 10, testPoints)
+        X = np.random.uniform(-3, 3, testPoints)
         Y = generate_random_poly(X, epsilon=2, roots=np.array([-1, 1]))
         X, Y = scale(X), scale(Y)
 
@@ -528,6 +555,12 @@ def main():
             Y,
             deg=10,
             modelTrainingFxn=MultiVarRegularizedRegression.train_model_lasso_style))
+        Trainer4 = MyLittleRegressionTrainer(0, 0.1, MultiVarRegularizedRegression(
+            X,
+            Y,
+            deg=10,
+            modelTrainingFxn=MultiVarRegularizedRegression.train_model_lassoLARS_style)
+        )
 
         Deg, MinMSE, LittleRegression = Trainer1.train_it_on(N=20, tol=1)
         print(f"test4, simple regression get deg = {Deg}, min MSE = {MinMSE}")
@@ -537,19 +570,23 @@ def main():
         Alpha, MinMSE, LassoRegression = Trainer3.train_it_on(N=20, tol=0.01)
         print(f"test4 lasso regression get alpha = {Alpha}, min MSE = {MinMSE}")
         print(f"Lasso Coefficients: {LassoRegression.LinModel.coef_}")
+        Alpha, MinMSE, LassoLARSRegression = Trainer4.train_it_on(N=20, tol=1e-4)
+        print(f"test 4, lassoLARS regression get alpha={Alpha}")
+        print(f"Lasso LARS Coefficients: {LassoLARSRegression.LinModel.coef_}")
 
 
         X_GridPoints = np.linspace(min(X), max(X), 100)
         Y_points = LittleRegression.query(X_GridPoints)
-        pyplt.scatter(X, Y, color="k")
+        pyplt.scatter(X, Y, color="m")
         pyplt.plot(X_GridPoints, Y_points, color="r")
 
         Y_points = LassoRegression.query(X_GridPoints)
-        pyplt.scatter(X, Y)
         pyplt.plot(X_GridPoints, Y_points, color="b")
 
+        Y_points = LassoLARSRegression.query(X_GridPoints)
+        pyplt.plot(X_GridPoints, Y_points, color="c")
+
         Y_points = RidgeRegression.query(X_GridPoints)
-        pyplt.scatter(X, Y)
         pyplt.plot(X_GridPoints, Y_points, color="g")
         pyplt.show()
 

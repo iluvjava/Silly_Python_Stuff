@@ -1,4 +1,6 @@
 #   Miller Tucker Zemlin's Linear Programming Reduction of the Traveling Salesman Problem.
+
+__all__ = ["TravelingSalesManLP"]
 import math as math
 import random as rnd
 
