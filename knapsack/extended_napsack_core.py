@@ -26,9 +26,9 @@ class EknapsackProblem:
         **
             If I in indices: Then, I can be added to the knapsack.
             If I not in indices:
-                If I is in the partial solution, then it's constrained by <= floor(x_i) y the parent nodes in the BB
+                *** If I is in the partial solution, then it's constrained by <= floor(x_i) y the parent nodes in the BB
                 tree.
-                If I is not in the partial solution, then something is wrong, because the variable is free, but
+                *** If I is not in the partial solution, then something is wrong, because the variable is free, but
                     it's not investigated any this problem and any of the sub-problems of this sub-problem.
 
     """
@@ -50,7 +50,7 @@ class EknapsackProblem:
 
         """
         assert all(I >= 0 for I in counts), "Item's counts cannot be negative."
-        assert all(len(I) == self.Size for I in [profits, weights, counts, budget])
+        assert all(len(I) == len(profits) for I in [profits, weights, counts])
         self._P, self._W, self._C, self._B = profits, weights, counts, budget
 
     def greedy_solve(self, AlreadyDecidedSoln):
@@ -86,39 +86,44 @@ class EknapsackProblem:
             Values = [((P[I]/W[I], I) if W[I] != 0 else float("+inf")) for I in len(P)]
             Values.sort(key=(lambda x: x[0]), reverse=True)
             Values = [I for _, I in Values]
-            FractionalItems, IntegralItems, ObjectiveValue = {}, {}, 0
+            Soln, ObjectiveValue = {}, 0
             RemainingBudge = B
             for Idx in Values:
                 if W[Idx] == 0:
                     ObjectiveValue += P[Idx]
-                    IntegralItems[Idx] = C[Idx]
+                    Soln[Idx] = C[Idx]
                 else:
-                    if RemainingBudge == 0:
+                    if RemainingBudge <= 0:
                         break
                     ToTake = min(RemainingBudge/W[Idx], C[Idx])
-                    if int(ToTake) == ToTake:
-                        IntegralItems[Idx] = ToTake
-                    else:
-                        FractionalItems[Idx] = ToTake
+                    Soln[Idx] = ToTake
                     RemainingBudge -= ToTake*W[Idx]
                     ObjectiveValue += ToTake*P[Idx]
-            return IntegralItems, FractionalItems, ObjectiveValue
+            return Soln, ObjectiveValue
+
         # Problem Digest------------------------------------------------------------------------------------------------
         C = self._C.copy()
-        for K, V in AlreadyDecidedSoln:
+        for K, V in AlreadyDecidedSoln.items():
             # Take partial solution into account.
             C[K] -= V
-        P, W, C, B = SubSlicing(self._P),  SubSlicing(self.W),  SubSlicing(C),  SubSlicing(self._B)
-        # The index in the sub problem is remapped to indices in the original problem.
+        B = self._B - sum(self._W[K]*V for K, V in AlreadyDecidedSoln.items())
+        P, W, C = SubSlicing(self._P), SubSlicing(self.W), SubSlicing(C)
+
+        # Index in sub |==> Index in full problem.
         IdxInverseMap = [-1]*self.Size
-        for I, V in self.Indices:
+        for I, V in enumerate(self.Indices):
             IdxInverseMap[I] = V
         # End ----------------------------------------------------------------------------------------------------------
-        # Merge the solution -------------------------------------------------------------------------------------------
-        IntegralItems, FractionalItems, ObjVal = SubSolving(P, W, C, B)
 
-
-        pass
+        # solve and merge the solution ---------------------------------------------------------------------------------
+        Soln, ObjVal = SubSolving(P, W, C, B)
+        SolnRemapped = {}
+        for K, V in Soln.items():
+            SolnRemapped[IdxInverseMap[K]] = V
+        for K, V in SolnRemapped.items():
+            AlreadyDecidedSoln[K] += V
+        # End ----------------------------------------------------------------------------------------------------------
+        return AlreadyDecidedSoln
 
     @property
     def Indices(self):
@@ -130,5 +135,18 @@ class EknapsackProblem:
 
     @property
     def Size(self):
-        return self(self._P)
+        return len(self._P)
 
+
+def main():
+
+    def TestKnapSack():
+        P, W, B, C = [2, 3, 2, 1], [6, 7, 4, 1], 9, [1]*4
+        EKnapSack = EknapsackProblem(P, W, C, B)
+        print(f"Instance: {EKnapSack}")
+        pass
+    TestKnapSack()
+
+
+if __name__ == "__main__":
+    main()
