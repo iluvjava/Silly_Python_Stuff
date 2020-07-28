@@ -18,6 +18,14 @@ class EknapsackProblem:
             ** The total budge allowed.
         This represents an extendned knapsack problem.
         * It will use as little resources as possible so it's efficient for the branch and bound algorithm.
+
+        * The whole problem is encapsulated in an instance of the class,
+        to solve a sub-problem on the BB tree, simply passes in the partial solution and an index set
+        indicating the items and the sub-problem can USE for ITS SOLUTION.
+
+        **
+            if I in indices: Then, I can be added to the knapsack.
+            If I not in indices:
     """
     def __init__(self,
                  profits: RealNumberList,
