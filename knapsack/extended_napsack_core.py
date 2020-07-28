@@ -123,24 +123,32 @@ class EknapsackProblem:
 
         # solve and merge the solution ---------------------------------------------------------------------------------
         Soln = SubSolving(P, W, C, B)
-        SolnRemapped = {}
+        SolnRemapped, FracIdx= {}, -1
         for K, V in Soln.items():
             SolnRemapped[IdxInverseMap[K]] = V
         for K, V in SolnRemapped.items():
+            if int(V) != V:
+                FracIdx = K
             if K not in AlreadyDecidedSoln:
                 AlreadyDecidedSoln[K] = V
             else:
                 AlreadyDecidedSoln[K] += V
         # End ----------------------------------------------------------------------------------------------------------
-        return AlreadyDecidedSoln, sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items())
+        return AlreadyDecidedSoln, sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items()), FracIdx
 
-    def branch(self):
+    def branch(self, bestIntegralValue):
         """
             Branch this current instance.
+        :param BestIntegralValue:
+            Provide a best integral value, it's a must for the Heuristic Brancher.
         :return:
-            Sub-problems
+            Sub-problems, and renewed objective value and solution for the global landscape.
         """
-        pass 
+        Soln, ObjVal, FracIdx = self.greedy_solve()
+        IsIntegral = FracIdx != -1
+        ShouldBranch = ObjVal > bestIntegralValue
+
+        pass
 
     @property
     def Indices(self):
@@ -167,8 +175,6 @@ class EknapsackProblem:
     @PartialSoln.setter
     def PartialSoln(self, item):
         self._PartialSoln = item
-
-
 
     @staticmethod
     def BB():
