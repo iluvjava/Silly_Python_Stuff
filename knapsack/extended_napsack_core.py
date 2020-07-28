@@ -9,7 +9,7 @@ from typing import *
 
 RealNumberList = List[Union[float, int]]
 
-class EknapsackSubProblem:
+class EknapsackProblem:
     """
         * problem Description:
             ** The item's weight are positive real numbers.
@@ -36,7 +36,31 @@ class EknapsackSubProblem:
         self._P, self._W, self._C, self._B = profits, weights, counts, budget
 
 
-    def greedy_solve(self):
+    def greedy_solve(self, AlreadyDecidedSoln):
+        """
+            This function serves as heuristics for the BB, and it returns the list of
+            all integral soltution, the fractional item, and the objective value
+            of the greedy approximated solution.
+
+            ** It will evaluate "AlreadyDecideSoln" first and then to decide on the
+            further solution.
+        :param AlreadyDecidedSoln:
+            The constraints accumulated via the BB algorithm, limiting the options for choosing
+            further solution.
+            {
+                "item's Idx": "How much of this is already in knapsack",
+                ...
+            }
+        :return:
+            {
+                "item's Idx": "How much of this item is in the knapsack"
+                ...
+            }
+            ,
+            ("Item's Idx", The fraction amount of item taken)
+            ,
+            Objective value of the solution.
+        """
         def SubSlicing(self, toSlice):
             return [toSlice for I in self.Indices]
 
