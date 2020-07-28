@@ -31,6 +31,9 @@ class EknapsackProblem:
                 *** If I is not in the partial solution, then something is wrong, because the variable is free, but
                     it's not investigated any this problem and any of the sub-problems of this sub-problem.
 
+        ** This class is going to handle the branching of the BB also, so it makes the codes for the BB Very
+        high level.
+
     """
     def __init__(self,
                  profits: RealNumberList,
@@ -53,7 +56,11 @@ class EknapsackProblem:
         assert all(len(I) == len(profits) for I in [profits, weights, counts])
         self._P, self._W, self._C, self._B = profits, weights, counts, budget
 
-    def greedy_solve(self, AlreadyDecidedSoln):
+        # Initialize as an root problem for bb
+        self._PartialSoln = dict(zip(range(self.Size), [0]*self.Size))
+        self._Indices = set(range(self.Size))
+
+    def greedy_solve(self):
         """
             This function serves as heuristics for the BB, and it returns the list of
             all integral soltution, the fractional item, and the objective value
@@ -78,19 +85,18 @@ class EknapsackProblem:
             ,
             Objective value of the solution.
         """
-        def SubSlicing(self, toSlice):
+        def SubSlicing(toSlice, Indices):
             # Copied.
-            return [toSlice for I in self.Indices]
+            return [toSlice[I] for I in Indices]
 
         def SubSolving(P, W, C, B):
-            Values = [((P[I]/W[I], I) if W[I] != 0 else float("+inf")) for I in len(P)]
+            Values = [((P[I]/W[I], I) if W[I] != 0 else float("+inf")) for I in range(len(P))]
             Values.sort(key=(lambda x: x[0]), reverse=True)
             Values = [I for _, I in Values]
-            Soln, ObjectiveValue = {}, 0
+            Soln = {}
             RemainingBudge = B
             for Idx in Values:
                 if W[Idx] == 0:
-                    ObjectiveValue += P[Idx]
                     Soln[Idx] = C[Idx]
                 else:
                     if RemainingBudge <= 0:
@@ -98,16 +104,16 @@ class EknapsackProblem:
                     ToTake = min(RemainingBudge/W[Idx], C[Idx])
                     Soln[Idx] = ToTake
                     RemainingBudge -= ToTake*W[Idx]
-                    ObjectiveValue += ToTake*P[Idx]
-            return Soln, ObjectiveValue
+            return Soln
 
         # Problem Digest------------------------------------------------------------------------------------------------
         C = self._C.copy()
+        AlreadyDecidedSoln = self._PartialSoln
         for K, V in AlreadyDecidedSoln.items():
             # Take partial solution into account.
             C[K] -= V
         B = self._B - sum(self._W[K]*V for K, V in AlreadyDecidedSoln.items())
-        P, W, C = SubSlicing(self._P), SubSlicing(self.W), SubSlicing(C)
+        P, W, C = SubSlicing(self._P, self.Indices), SubSlicing(self._W, self.Indices), SubSlicing(C, self.Indices)
 
         # Index in sub |==> Index in full problem.
         IdxInverseMap = [-1]*self.Size
@@ -116,26 +122,65 @@ class EknapsackProblem:
         # End ----------------------------------------------------------------------------------------------------------
 
         # solve and merge the solution ---------------------------------------------------------------------------------
-        Soln, ObjVal = SubSolving(P, W, C, B)
+        Soln = SubSolving(P, W, C, B)
         SolnRemapped = {}
         for K, V in Soln.items():
             SolnRemapped[IdxInverseMap[K]] = V
         for K, V in SolnRemapped.items():
-            AlreadyDecidedSoln[K] += V
+            if K not in AlreadyDecidedSoln:
+                AlreadyDecidedSoln[K] = V
+            else:
+                AlreadyDecidedSoln[K] += V
         # End ----------------------------------------------------------------------------------------------------------
-        return AlreadyDecidedSoln
+        return AlreadyDecidedSoln, sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items())
+
+    def branch(self):
+        """
+            Branch this current instance.
+        :return:
+            Sub-problems
+        """
+        pass 
 
     @property
     def Indices(self):
-        return self.Indices.copy()
+        return self._Indices.copy()
 
     @Indices.setter
     def Indices(self, indices: List[int]):
-        self.Indices = indices.copy()
+        self._Indices = indices.copy()
 
     @property
     def Size(self):
         return len(self._P)
+
+    @property
+    def PartialSoln(self):
+        """
+            If key is not specified, then the default value for x_i is going to be zero.
+
+            The item it's taking is always gonna be integers.
+        :return:
+        """
+        return self._PartialSoln
+
+    @PartialSoln.setter
+    def PartialSoln(self, item):
+        self._PartialSoln = item
+
+
+
+    @staticmethod
+    def BB():
+        """
+            A static method for evaluation the whole Eknapsack problem
+
+        :return:
+            solution.
+        """
+
+
+        pass
 
 
 def main():
@@ -144,6 +189,17 @@ def main():
         P, W, B, C = [2, 3, 2, 1], [6, 7, 4, 1], 9, [1]*4
         EKnapSack = EknapsackProblem(P, W, C, B)
         print(f"Instance: {EKnapSack}")
+        print(EKnapSack.greedy_solve())
+
+        print("exclude item at index 1 (set x_1 = 0)")
+        EKnapSack.Indices = {0, 2, 3}
+        EKnapSack.PartialSoln = {1: 0}
+        print(EKnapSack.greedy_solve())
+        print("Including item at index 1 (set x_1 = 1)")
+        EKnapSack.Indices = {0, 1, 2, 3}
+        EKnapSack.PartialSoln = {1: 1}
+        print(EKnapSack.greedy_solve())
+
         pass
     TestKnapSack()
 
