@@ -38,11 +38,16 @@ class EknapsackProblem:
                  counts: RealNumberList,
                  budget: RealNumberList):
         """
-
+            Construct the problem with all these elements, this represent a root problem
+            for the knapsack problem.
         :param profits:
+            Float list, all positive.
         :param weights:
+            Weights, all positive.
         :param counts:
+            The limit of number an item can be taken.
         :param budget:
+
         """
         assert all(I >= 0 for I in counts), "Item's counts cannot be negative."
         assert all(len(I) == self.Size for I in [profits, weights, counts, budget])
