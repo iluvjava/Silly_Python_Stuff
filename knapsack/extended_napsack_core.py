@@ -4,6 +4,13 @@
 
     This problem is really an Linear programming problem where the
     simplex algorithm is simplified.
+
+    ! Warning Lack of Equivalence compare to the BB algorithm for LP:
+        In BB, The braching asserts new constraint such as x_i < floor(x_i_tilde)
+        But this is not the equivalent of setting the variable to that value and then exluding it
+        from further recursion.
+    ! Yes, for standard knapsack, if we lower the counts of item that has been selected for the greedy solution,
+    then that item will still be selected for the number of counts in future recursion.
 """
 from typing import *
 
@@ -122,7 +129,6 @@ class EknapsackProblem:
         for I, V in enumerate(self.Indices):
             IdxInverseMap[I] = V
         # End ----------------------------------------------------------------------------------------------------------
-
         # solve and merge the solution ---------------------------------------------------------------------------------
         Soln = SubSolving(P, W, C, B)
         SolnRemapped, FracIdx= {}, -1
@@ -152,11 +158,11 @@ class EknapsackProblem:
         # END ----------------------------------------------------------------------------------------------------------
         IsIntegral = FracIdx != -1
         OptimalitySatisfied = ObjVal > globalIntegralValue
-
+        # Pruned by optimality of the integral solution ----------------------------------------------------------------
         if IsIntegral and OptimalitySatisfied:
             NewSoln, NewObjVal = Soln, ObjVal
             return NewSoln, NewObjVal, SubP1, SubP2
-
+        # Fractional, and it should branch -----------------------------------------------------------------------------
         if OptimalitySatisfied:
             # p1, Bound from above -------------------------------------------------------------------------------------
             PartialSoln = Soln.Copy()
@@ -164,6 +170,8 @@ class EknapsackProblem:
             NewIndices.remove(FracIdx)
             if int(PartialSoln[FracIdx]) != 0:
                 PartialSoln[FracIdx] = int(PartialSoln[FracIdx])
+            else:
+                del PartialSoln[FracIdx]
             SubP1 = EknapsackProblem(self._P, self._W, self._C, self._B)
             SubP1.Indices = NewIndices
             SubP1.PartialSoln = PartialSoln
@@ -174,7 +182,8 @@ class EknapsackProblem:
             SubP2 = EknapsackProblem(self._P, self._W, self._C, self._B)
             SubP2.Indices = NewIndices
             SubP2.PartialSoln = PartialSoln
-            pass
+
+        return NewSoln, NewObjVal, SubP1, SubP2
 
 
     @property
@@ -226,7 +235,7 @@ def main():
 
         print("exclude item at index 1 (set x_1 = 0)")
         EKnapSack.Indices = {0, 2, 3}
-        EKnapSack.PartialSoln = {1: 0}
+        del EKnapSack.PartialSoln[1]
         print(EKnapSack.greedy_solve())
         print("Including item at index 1 (set x_1 = 1)")
         EKnapSack.Indices = {0, 1, 2, 3}
