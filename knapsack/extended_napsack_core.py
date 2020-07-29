@@ -68,6 +68,8 @@ class EknapsackProblem:
 
             ** It will evaluate "AlreadyDecideSoln" first and then to decide on the
             further solution.
+
+            ** Function will modify the partial solution that for this class, a reference will be returned.
         :param AlreadyDecidedSoln:
             The constraints accumulated via the BB algorithm, limiting the options for choosing
             further solution.
@@ -136,7 +138,7 @@ class EknapsackProblem:
         # End ----------------------------------------------------------------------------------------------------------
         return AlreadyDecidedSoln, sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items()), FracIdx
 
-    def branch(self, bestIntegralValue):
+    def branch(self, globalIntegralValue):
         """
             Branch this current instance.
         :param BestIntegralValue:
@@ -145,10 +147,35 @@ class EknapsackProblem:
             Sub-problems, and renewed objective value and solution for the global landscape.
         """
         Soln, ObjVal, FracIdx = self.greedy_solve()
+        # To Return:----------------------------------------------------------------------------------------------------
+        NewSoln, NewObjVal, SubP1, SubP2, = None, None, None, None
+        # END ----------------------------------------------------------------------------------------------------------
         IsIntegral = FracIdx != -1
-        ShouldBranch = ObjVal > bestIntegralValue
+        OptimalitySatisfied = ObjVal > globalIntegralValue
 
-        pass
+        if IsIntegral and OptimalitySatisfied:
+            NewSoln, NewObjVal = Soln, ObjVal
+            return NewSoln, NewObjVal, SubP1, SubP2
+
+        if OptimalitySatisfied:
+            # p1, Bound from above -------------------------------------------------------------------------------------
+            PartialSoln = Soln.Copy()
+            NewIndices = self.Indices
+            NewIndices.remove(FracIdx)
+            if int(PartialSoln[FracIdx]) != 0:
+                PartialSoln[FracIdx] = int(PartialSoln[FracIdx])
+            SubP1 = EknapsackProblem(self._P, self._W, self._C, self._B)
+            SubP1.Indices = NewIndices
+            SubP1.PartialSoln = PartialSoln
+            # p2, Bound from below -------------------------------------------------------------------------------------
+            PartialSoln = Soln.Copy()
+            NewIndices = self.Indices
+            PartialSoln[FracIdx] = int(PartialSoln[FracIdx]) + 1
+            SubP2 = EknapsackProblem(self._P, self._W, self._C, self._B)
+            SubP2.Indices = NewIndices
+            SubP2.PartialSoln = PartialSoln
+            pass
+
 
     @property
     def Indices(self):
