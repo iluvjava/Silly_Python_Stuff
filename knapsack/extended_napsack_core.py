@@ -15,6 +15,7 @@
     TODO: Check the correctness of the algorithm with the Pul LP solver.
 """
 from typing import *
+import pulp as lp
 
 RealNumberList = List[Union[float, int]]
 
@@ -23,7 +24,7 @@ class EknapsackProblem:
         * Preconditions:
             ** The item's weight are positive real numbers.
             ** The item's profits are positive real numbers.
-            ** The item's counts are positive real numbers.
+            ** The item's counts are positive Integers.
             ** The total budge allowed.
         This represents an extended knapsack problem.
         * It will use as little resources as possible so it's efficient for the branch and bound algorithm.
@@ -47,7 +48,7 @@ class EknapsackProblem:
     def __init__(self,
                  profits: RealNumberList,
                  weights: RealNumberList,
-                 counts: RealNumberList,
+                 counts: List[int],
                  budget: RealNumberList):
         """
             Construct the problem with all these elements, this represent a root problem
@@ -154,7 +155,6 @@ class EknapsackProblem:
                 AlreadyDecidedSoln[K] = V
             else:
                 AlreadyDecidedSoln[K] += V
-
         self.__GreedySoln = AlreadyDecidedSoln
         self._ObjVal = sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items())
         self._FractIndx = FracIdx
@@ -274,6 +274,42 @@ class EknapsackProblem:
                 Stack.append(SubP2)
         return GIntSoln, GObjVal
 
+class EknapsackSimplex:
+    """
+        This class will reduce the problem to LP, so it can be compare with the
+        BB native python implementations for correctness and efficiency.
+    """
+
+    def __init__(self,
+                 profits: RealNumberList,
+                 weights: RealNumberList,
+                 counts: RealNumberList,
+                 budget: RealNumberList):
+        self._P, self._W, self._C, self._B = profits, weights, counts, budget
+        L = len(self._P)
+        assert all(len(I) == L for I in [self._W, self._C])
+        self._LP = None
+
+    def formulate_lp(self):
+        n = len(self._P)
+        Problem = lp.LpProblem(name="EknapSack", sense=lp.LpMaximize)
+        X = lp.LpVariable.dict(name='x', indexs=range(n), lowBound=0, cat=lp.LpInteger)
+        Problem += lp.lpSum(X[I]*self._P[I] for I in range(n))  # Objective.
+        Problem += lp.lpSum(X[I]*self._W[I] for I in range(n)) <= self._B
+        for I, V in enumerate(self._C):
+            Problem += X[I] <= V
+        self._LP = Problem
+        return Problem
+
+    def solve(self):
+        pass
+
+    @property
+    def LpProblem(self):
+        if self._LP is None:
+            self.formulate_lp()
+        return self._LP
+
 
 
 def main():
@@ -320,7 +356,14 @@ def main():
         EKnapSack = EknapsackProblem(P, W, C, B)
         print(EknapsackProblem.BB(EKnapSack))
 
+    def LPFormulation():
+        P, W, B, C = [2, 3, 2, 1], [6, 7, 4, 1], 9, [1] * 4
+        EKnapSack = EknapsackSimplex(P, W, C, B)
+        print(EKnapSack.formulate_lp())
+        pass
+
     RunBB()
+    LPFormulation()
 
 
 if __name__ == "__main__":
