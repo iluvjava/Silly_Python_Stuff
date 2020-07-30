@@ -16,8 +16,26 @@
 """
 from typing import *
 import pulp as lp
+import random as rnd
 
 RealNumberList = List[Union[float, int]]
+
+def make_extended_knapsack_problem(size:int, density:float):
+    """
+        Generate an extended knapsack problem where the integer solution of the problem is unqiue.
+    :param size:
+        The number of items that are going to be in the problem .
+    :param density:
+        The budget divides the total weight of all items.
+    :return:
+        [(p, w, c), ...], budget
+    """
+    assert 0 < density < 1, "density must be a quantity that is between 0 and 1. "
+    ToReturn = [(rnd.random(),rnd.random(),int(rnd.random()*size)) for I in range(size)]
+
+
+
+
 
 class EknapsackProblem:
     """
@@ -32,6 +50,8 @@ class EknapsackProblem:
         * The whole problem is encapsulated in an instance of the class,
         to solve a sub-problem on the BB tree, simply passes in the partial solution and an index set
         indicating the items and the sub-problem can USE for ITS SOLUTION.
+
+        * The solution is must be unique, this solver cannot find all linear combinations of the  optimal solution.
 
         **
             If I in indices: Then, I can be added to the knapsack.
@@ -48,7 +68,7 @@ class EknapsackProblem:
     def __init__(self,
                  profits: RealNumberList,
                  weights: RealNumberList,
-                 counts: List[int],
+                 counts: RealNumberList,
                  budget: RealNumberList):
         """
             Construct the problem with all these elements, this represent a root problem
@@ -65,13 +85,18 @@ class EknapsackProblem:
         assert all(I >= 0 for I in counts), "Item's counts cannot be negative."
         assert all(len(I) == len(profits) for I in [profits, weights, counts])
         self._P, self._W, self._C, self._B = profits, weights, counts, budget
+        # check if the problem will produce unique solution ------------------------------------------------------------
+        Values = [((self._P[I] / self._W[I], I) if self._W[I] != 0 else float("+inf")) for I in range(self.Size)]
+        Values.sort(key=(lambda x: x[0]), reverse=True)
+        Values = [I for _, I in Values]
+        self._SolutionUnique =  sum((1 if Values[I] == Values[I+1] else 0) for I in range(self.Size - 1)) <= 0  # ------
 
-        # Initialize as an root problem for bb
+        # Initialize as an root problem for bb -------------------------------------------------------------------------
         self._PartialSoln = {}
-        self._Indices = set(range(self.Size))
+        self._Indices = set(range(self.Size))  # -----------------------------------------------------------------------
 
-        # The instance is only going to solve itself ONCE.
-        self.__GreedySoln, self._ObjVal, self._FractIndx = None, None, None
+        # The instance is only going to solve itself ONCE. -------------------------------------------------------------
+        self.__GreedySoln, self._ObjVal, self._FractIndx = None, None, None  # -----------------------------------------
 
 
     def greedy_solve(self):
@@ -113,11 +138,10 @@ class EknapsackProblem:
 
         def SubSolving(P, W, C, B):
             Values = [((P[I]/W[I], I) if W[I] != 0 else float("+inf")) for I in range(len(P))]
-            Values.sort(key=(lambda x: x[0]), reverse=True)
-            Values = [I for _, I in Values]
+            Values.sort(key=(lambda x: x[0]), reverse=True)  # Sort by item's values -----------------------------------
             Soln = {}
             RemainingBudge = B
-            for Idx in Values:
+            for _, Idx in Values:
                 if W[Idx] == 0:
                     Soln[Idx] = C[Idx]
                 else:
@@ -158,6 +182,7 @@ class EknapsackProblem:
         self.__GreedySoln = AlreadyDecidedSoln
         self._ObjVal = sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items())
         self._FractIndx = FracIdx
+        # Returning the solution ---------------------------------------------------------------------------------------
         return self.__GreedySoln, self._ObjVal, self._FractIndx
 
     def branch(self, globalIntegralValue, NewSoln=None):
@@ -245,7 +270,7 @@ class EknapsackProblem:
         self._PartialSoln = item
 
     @staticmethod
-    def BB(rootProblem):
+    def BB(rootProblem, verbose=False):
         """
             A static method for evaluation the whole Eknapsack problem
         :param rootProblem:
@@ -257,16 +282,18 @@ class EknapsackProblem:
             S, _, _ = rootProblem.greedy_solve()
             S = dict([(I, V) for I, V in S.items() if int(V) == V])
             ObjVal = sum(rootProblem[0, I]*V for I, V in S.items())
-            print(f"BB executing with war start solution and objective value: ")
-            print(S)
-            print(ObjVal)
+            if verbose:
+                print(f"BB executing with war start solution and objective value: ")
+                print(S)
+                print(ObjVal)
             return S, ObjVal
         GIntSoln, GObjVal = Initialization()
         Stack = [rootProblem]
         while len(Stack) != 0:
             P = Stack.pop()
             P.greedy_solve()
-            print(P)
+            if verbose:
+                print(P)
             GIntSoln, GObjVal, SubP1, SubP2 = P.branch(GObjVal, GIntSoln)
             if SubP1 is not None:
                 Stack.append(SubP1)
@@ -274,10 +301,14 @@ class EknapsackProblem:
                 Stack.append(SubP2)
         return GIntSoln, GObjVal
 
+
+
+
 class EknapsackSimplex:
     """
         This class will reduce the problem to LP, so it can be compare with the
         BB native python implementations for correctness and efficiency.
+
     """
 
     def __init__(self,
@@ -289,6 +320,7 @@ class EknapsackSimplex:
         L = len(self._P)
         assert all(len(I) == L for I in [self._W, self._C])
         self._LP = None
+        self._X = None
 
     def formulate_lp(self):
         n = len(self._P)
@@ -298,18 +330,27 @@ class EknapsackSimplex:
         Problem += lp.lpSum(X[I]*self._W[I] for I in range(n)) <= self._B
         for I, V in enumerate(self._C):
             Problem += X[I] <= V
-        self._LP = Problem
+        self._LP, self._X = Problem, X
         return Problem
 
     def solve(self):
-        pass
+        """
+            Solve the formultated LP problem and then return the results as a map.
+        :return:
+        """
+        Soln = {}  # To return -----------------------------------------------------------------------------------------
+        Problem = self.formulate_lp()
+        Problem.solve()
+        for I, Var in self._X.items():
+            if Var.varValue != 0:
+                Soln[I] = Var.varValue
+        return Soln, sum(V*self._P[I] for I, V in Soln.items())
 
     @property
     def LpProblem(self):
         if self._LP is None:
             self.formulate_lp()
         return self._LP
-
 
 
 def main():
@@ -360,7 +401,16 @@ def main():
         P, W, B, C = [2, 3, 2, 1], [6, 7, 4, 1], 9, [1] * 4
         EKnapSack = EknapsackSimplex(P, W, C, B)
         print(EKnapSack.formulate_lp())
+        print(EKnapSack.solve())
+
+        P, W, B, C = [2, 3, 2, 1], [6, 7, 4, 1], 9, [1] * 4
+        EKnapSack = EknapsackProblem(P, W, C, B)
+        print(EknapsackProblem.BB(EKnapSack))
+
+    def CheckAgainstLP():
         pass
+
+
 
     RunBB()
     LPFormulation()
