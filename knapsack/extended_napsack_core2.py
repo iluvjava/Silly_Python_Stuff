@@ -12,6 +12,19 @@
     ! No, it's correct immediately after one level of branching, but it won't work if in future branching, because it's
     possible that, in future branching, that constraint x_i < floor(x_i_tilde) ceases to be a tight one.
 
+    TODO: Investiage this if possible:
+    ---For this instance, the CBC pulp solver produced an sub-optimal solution to the problem.
+    Failed on inputs: ([(0.14, 0.02, 2), (0.33, 0.9, 3), (0.65, 0.82, 2), (0.95, 0.28, 1), (0.64, 0.78, 2)], 1.866),
+    obj is like: (2.37, 1.88)
+    Solutions are like: ({4: 2, 3: 1, 0: 1}, {0: 2.0, 2: 1.0, 3: 1.0})
+
+    ---For this instance, my algorithm produced sub-optimal solution:
+    Failed on inputs: ([(0.79, 0.38, 2), (0.35, 0.19, 4), (0.23, 0.01, 5), (0.89, 0.6, 4), (0.9, 0.63, 1)], 1.38),
+    obj is like: (3.55, 3.7800000000000002)
+    Solutions are like: ({1: 3, 0: 2, 2: 4}, {0: 2.0, 1: 3.0, 2: 5.0})
+
+    ** Might be related the item's with weights that are incredibly close to zero.
+
 """
 from typing import *
 import pulp as lp
@@ -32,7 +45,8 @@ def make_extended_knapsack_problem(size: int, density: float, itemsCounts=5):
         [(p, w, c), ...], budget
     """
     assert 0 < density < 1, "density must be a quantity that is between 0 and 1. "
-    ToReturn = [(rnd.random(), rnd.random(),  int(rnd.random()*itemsCounts) + 1) for _ in range(size)]
+    ToReturn = [(rnd.random(), 10 + rnd.random(),  int(rnd.random()*itemsCounts) + 1) for _ in range(size)]
+    ToReturn = list(map(lambda x: (round(x[0], 2), round(x[1], 2), x[2]), ToReturn))
     Budget = sum(W*C for _, W, C in ToReturn)*density
     return ToReturn, Budget
 
@@ -86,7 +100,7 @@ class EknapsackGreedy:
         assert all(len(I) == len(profits) for I in [profits, weights, counts])
         self._P, self._W, self._C, self._B = profits, weights, counts, budget
         # check if the problem will produce unique solution ------------------------------------------------------------
-        Values = [((self._P[I] / self._W[I], I) if self._W[I] != 0 else float("+inf")) for I in range(self.Size)]
+        Values = [((self._P[I] / self._W[I], I) if self._W[I] != 0 else (float("+inf"), I)) for I in range(self.Size)]
         Values.sort(key=(lambda x: x[0]), reverse=True)
         Values = [I for _, I in Values]
         self._SolutionUnique =  sum((1 if Values[I] == Values[I+1] else 0) for I in range(self.Size - 1)) <= 0  # ------
@@ -137,7 +151,7 @@ class EknapsackGreedy:
             return [toSlice[I] for I in Indices]
 
         def SubSolving(P, W, C, B):
-            Values = [((P[I]/W[I], I) if W[I] != 0 else float("+inf")) for I in range(len(P))]
+            Values = [((P[I]/W[I], I) if W[I] != 0 else (float("+inf"), I)) for I in range(len(P))]
             Values.sort(key=(lambda x: x[0]), reverse=True)  # Sort by item's values -----------------------------------
             Soln = {}
             RemainingBudge = B
@@ -415,18 +429,29 @@ def main():
         print(EknapsackGreedy.BB(EKnapSack))
 
     def CheckAgainstLP():
+        import time
+        FailedTests = 0
+        TotalTests = 500
+        for _ in range(TotalTests):
 
-        for _ in range(200):
-            PWC, B = make_extended_knapsack_problem(10, 0.3)
+            PWC, B = make_extended_knapsack_problem(5, 0.3)
             P, W, C = map(list, zip(*PWC))
-            print(P, W, C, B)
+
             KnapsackInstance1 = EknapsackGreedy(P, W, C, B)
             KnapsackInstance2 = EknapsackSimplex(P, W, C, B)
             # ----------------------------------------------------------------------------------------------------------
             Soln1, Obj1 = KnapsackInstance1.solve()
             Soln2, Obj2= KnapsackInstance2.solve()
-            print(Soln1, Soln2)
-            assert abs(Obj1 - Obj2) < 1e-14, f"Failed on inputs: {PWC, B}, \n obj is like: {Obj1, Obj2}"
+            # print(Soln1, Soln2)
+
+            if abs(Obj1 - Obj2) > 1e-14:
+                FailedTests += 1
+                print(f"Failed on inputs: {PWC, B}, \n obj is like: {Obj1, Obj2}")
+                print(f"Solutions are like: {Soln1, Soln2}")
+            else:
+                print(P, W, C, B, " : passed")
+
+        print(f"Failed: {FailedTests}")
 
 
     # RunBB()
