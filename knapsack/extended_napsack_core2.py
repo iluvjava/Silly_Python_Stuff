@@ -9,14 +9,14 @@
         In BB, The braching asserts new constraint such as x_i < floor(x_i_tilde)
         But this is not the equivalent of setting the variable to that value and then exluding it
         from further recursion.
-    ! Yes, for standard knapsack, if we lower the counts of item that has been selected for the greedy solution,
-    then that item will still be selected for the number of counts in future recursion.
+    ! No, it's correct immediately after one level of branching, but it won't work if in future branching, because it's
+    possible that, in future branching, that constraint x_i < floor(x_i_tilde) ceases to be a tight one.
 
-    TODO: Check the correctness of the algorithm with the Pul LP solver.
 """
 from typing import *
 import pulp as lp
 import random as rnd
+import fractions as frac
 
 RealNumberList = List[Union[float, int]]
 
@@ -208,20 +208,23 @@ class EknapsackGreedy:
         # Fractional, and it should branch -----------------------------------------------------------------------------
         if OptimalitySatisfied:
             # p1, Bound from above -------------------------------------------------------------------------------------
-            PartialSoln = self.PartialSoln.copy()
+            PartialSoln = self.PartialSoln
+            NewItemCounts = self._C
             NewIndices = self.Indices
-            NewIndices.remove(FracIdx)
             if int(Soln[FracIdx]) != 0:
-                PartialSoln[FracIdx] = int(Soln[FracIdx])
-            SubP1 = EknapsackGreedy(self._P, self._W, self._C, self._B)
-            SubP1.Indices = NewIndices
-            SubP1.PartialSoln = PartialSoln
+                NewItemCounts = NewItemCounts.copy()
+                NewItemCounts[FracIdx]= int(Soln[FracIdx])
+            else:
+                NewIndices.remove(FracIdx)
+            SubP1 = EknapsackGreedy(self._P, self._W, NewItemCounts, self._B)
+            SubP1._Indices = NewIndices
+            SubP1._PartialSoln = PartialSoln
             # p2, Bound from below -------------------------------------------------------------------------------------
             PartialSoln = self.PartialSoln.copy()
             NewIndices = self.Indices
             PartialSoln[FracIdx] = int(Soln[FracIdx]) + 1
             SubP2 = EknapsackGreedy(self._P, self._W, self._C, self._B)
-            SubP2.Indices = NewIndices
+            SubP2._Indices = NewIndices
             SubP2.PartialSoln = PartialSoln
 
         return NewSoln, NewObjVal, SubP1, SubP2
@@ -247,6 +250,7 @@ class EknapsackGreedy:
         :return:
         """
         return [self._P, self._W, self._C][I[0]][I[1]]
+
     @property
     def Indices(self):
         return self._Indices.copy()
@@ -413,9 +417,9 @@ def main():
     def CheckAgainstLP():
 
         for _ in range(200):
-            PWC, B = make_extended_knapsack_problem(4, 0.3)
+            PWC, B = make_extended_knapsack_problem(10, 0.3)
             P, W, C = map(list, zip(*PWC))
-            print(P, W, C)
+            print(P, W, C, B)
             KnapsackInstance1 = EknapsackGreedy(P, W, C, B)
             KnapsackInstance2 = EknapsackSimplex(P, W, C, B)
             # ----------------------------------------------------------------------------------------------------------
@@ -423,8 +427,6 @@ def main():
             Soln2, Obj2= KnapsackInstance2.solve()
             print(Soln1, Soln2)
             assert abs(Obj1 - Obj2) < 1e-14, f"Failed on inputs: {PWC, B}, \n obj is like: {Obj1, Obj2}"
-
-
 
 
     # RunBB()
