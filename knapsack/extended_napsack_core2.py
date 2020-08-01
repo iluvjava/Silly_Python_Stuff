@@ -12,24 +12,42 @@
     ! No, it's correct immediately after one level of branching, but it won't work if in future branching, because it's
     possible that, in future branching, that constraint x_i < floor(x_i_tilde) ceases to be a tight one.
 
+    ====================================================================================================================
     TODO: Investiage this if possible:
-    ---For this instance, the CBC pulp solver produced an sub-optimal solution to the problem.
-    Failed on inputs: ([(0.14, 0.02, 2), (0.33, 0.9, 3), (0.65, 0.82, 2), (0.95, 0.28, 1), (0.64, 0.78, 2)], 1.866),
-    obj is like: (2.37, 1.88)
-    Solutions are like: ({4: 2, 3: 1, 0: 1}, {0: 2.0, 2: 1.0, 3: 1.0})
+    -- For this instance, the CBC pulp solver produced an sub-optimal solution to the problem.
+        Failed on inputs: ([(0.14, 0.02, 2), (0.33, 0.9, 3), (0.65, 0.82, 2), (0.95, 0.28, 1), (0.64, 0.78, 2)], 1.866),
+        obj is like: (2.37, 1.88)
+        Solutions are like: ({4: 2, 3: 1, 0: 1}, {0: 2.0, 2: 1.0, 3: 1.0})
 
-    ---For this instance, my algorithm produced sub-optimal solution:
-    Failed on inputs: ([(0.79, 0.38, 2), (0.35, 0.19, 4), (0.23, 0.01, 5), (0.89, 0.6, 4), (0.9, 0.63, 1)], 1.38),
-    obj is like: (3.55, 3.7800000000000002)
-    Solutions are like: ({1: 3, 0: 2, 2: 4}, {0: 2.0, 1: 3.0, 2: 5.0})
+        Failed on inputs: ([(0.434, 0.5501, 2), (0.4285, 0.7953, 3), (0.0088, 0.3501, 2), (0.715, 0.6947, 3)],
+        1.8811200000000001),
+        obj is like: (1.583, 1.4387999999999999)
+        Solutions are like: ({0: 2, 3: 1}, {2: 1.0, 3: 2.0})
+
+    -- For this instance, my algorithm produced sub-optimal solution:
+        Failed on inputs: ([(0.79, 0.38, 2), (0.35, 0.19, 4), (0.23, 0.01, 5), (0.89, 0.6, 4), (0.9, 0.63, 1)], 1.38),
+        obj is like: (3.55, 3.7800000000000002)
+        Solutions are like: ({1: 3, 0: 2, 2: 4}, {0: 2.0, 1: 3.0, 2: 5.0})
+        
+        Failed on inputs: ([(0.7109, 0.4548, 3), (0.1049, 0.8713, 1), (0.5754, 0.1237, 1), (0.7012, 0.6726, 1)],
+        0.9095999999999999),
+        obj is like: (1.2863, 1.4218)
+        Solutions are like: ({2: 1, 0: 1}, {0: 2.0})
+
 
     ** Might be related the item's with weights that are incredibly close to zero.
+
+    Conclusion:
+        * The problem is not related to the numerical stability of inversing the constraint matrix.
+
+
 
 """
 from typing import *
 import pulp as lp
 import random as rnd
 import fractions as frac
+import numpy as np
 
 RealNumberList = List[Union[float, int]]
 
@@ -45,8 +63,8 @@ def make_extended_knapsack_problem(size: int, density: float, itemsCounts=5):
         [(p, w, c), ...], budget
     """
     assert 0 < density < 1, "density must be a quantity that is between 0 and 1. "
-    ToReturn = [(rnd.random(), 10 + rnd.random(),  int(rnd.random()*itemsCounts) + 1) for _ in range(size)]
-    ToReturn = list(map(lambda x: (round(x[0], 2), round(x[1], 2), x[2]), ToReturn))
+    ToReturn = [(rnd.random(), rnd.random(),  int(rnd.random()*itemsCounts) + 1) for _ in range(size)]
+    ToReturn = list(map(lambda x: (round(x[0], 4), round(x[1], 4), x[2]), ToReturn))
     Budget = sum(W*C for _, W, C in ToReturn)*density
     return ToReturn, Budget
 
@@ -79,11 +97,13 @@ class EknapsackGreedy:
         high level.
 
     """
+    Verbose = False
     def __init__(self,
                  profits: RealNumberList,
                  weights: RealNumberList,
                  counts: RealNumberList,
-                 budget: RealNumberList):
+                 budget,
+                 branchingIdentigier: str=""):
         """
             Construct the problem with all these elements, this represent a root problem
             for the knapsack problem.
@@ -94,7 +114,10 @@ class EknapsackGreedy:
         :param counts:
             The limit of number an item can be taken.
         :param budget:
-
+            The constraight.
+        :param branchingIdentigier:
+            0, left branching, <= floor(x_tilde_i),
+            1, right branching, >= ceiling(x_tilde_i)
         """
         assert all(I >= 0 for I in counts), "Item's counts cannot be negative."
         assert all(len(I) == len(profits) for I in [profits, weights, counts])
@@ -111,6 +134,8 @@ class EknapsackGreedy:
 
         # The instance is only going to solve itself ONCE. -------------------------------------------------------------
         self.__GreedySoln, self._ObjVal, self._FractIndx = None, None, None  # -----------------------------------------
+        self._BranchingIdentifier = ""  # This is for debugging --------------------------------------------------------
+
 
 
     def greedy_solve(self):
@@ -218,6 +243,7 @@ class EknapsackGreedy:
         # Pruned by optimality of the integral solution ----------------------------------------------------------------
         if IsIntegral and OptimalitySatisfied:
             NewSoln, NewObjVal = Soln, ObjVal
+            EknapsackGreedy.log("This Node has found an integral solution and updated the optimal")
             return NewSoln, NewObjVal, SubP1, SubP2
         # Fractional, and it should branch -----------------------------------------------------------------------------
         if OptimalitySatisfied:
@@ -230,21 +256,30 @@ class EknapsackGreedy:
                 NewItemCounts[FracIdx]= int(Soln[FracIdx])
             else:
                 NewIndices.remove(FracIdx)
-            SubP1 = EknapsackGreedy(self._P, self._W, NewItemCounts, self._B)
+            SubP1 = EknapsackGreedy(self._P,
+                                    self._W,
+                                    NewItemCounts,
+                                    self._B,
+                                    branchingIdentigier=self._BranchingIdentifier + "0")
             SubP1._Indices = NewIndices
             SubP1._PartialSoln = PartialSoln
             # p2, Bound from below -------------------------------------------------------------------------------------
             PartialSoln = self.PartialSoln.copy()
             NewIndices = self.Indices
             PartialSoln[FracIdx] = int(Soln[FracIdx]) + 1
-            SubP2 = EknapsackGreedy(self._P, self._W, self._C, self._B)
+            SubP2 = EknapsackGreedy(self._P,
+                                    self._W,
+                                    self._C,
+                                    self._B,
+                                    branchingIdentigier=self._BranchingIdentifier + "1")
             SubP2._Indices = NewIndices
             SubP2.PartialSoln = PartialSoln
 
         return NewSoln, NewObjVal, SubP1, SubP2
 
     def solve(self, verbose=False):
-        Soln, ObjVal = EknapsackGreedy.BB(self,verbose=verbose)
+        self.Verbose = verbose
+        Soln, ObjVal = EknapsackGreedy.BB(self)
         return Soln, ObjVal
 
     def __repr__(self):
@@ -255,6 +290,7 @@ class EknapsackGreedy:
         s += f"Partial Solution: {self.PartialSoln}\n"
         s += f"Greedy Soluion: {self.__GreedySoln}\n"
         s += f"Upperbound (Objective Value from Greedy algo): {self._ObjVal}\n"
+        s += f"Branching Identifier: {self._BranchingIdentifier}\n"
         return s
 
     def __getitem__(self, I):
@@ -264,6 +300,28 @@ class EknapsackGreedy:
         :return:
         """
         return [self._P, self._W, self._C][I[0]][I[1]]
+
+    def check_condition(self):
+        """
+            Attempt to access the numerical stability of the problem.
+
+            * Get the simplex tableau of this thing and see the condition number of the matrix.
+            * The matrix is the constraints matrix of the LP problem.
+        :return:
+            cond numb
+        """
+        ConstraintMatrix = np.eye(self.Size, self.Size, k = 0)  # n by n identity matrix -------------------------------
+        ConstraintMatrix = np.vstack((np.array(self._W), ConstraintMatrix))
+        ConstraintMatrix = np.hstack(
+            (
+                ConstraintMatrix,
+                np.array([self._B] + self._C)[:, np.newaxis]
+            )
+        )
+
+        return np.linalg.cond(ConstraintMatrix), ConstraintMatrix  # Condition number of the constraint matrix ---------
+
+
 
     @property
     def Indices(self):
@@ -291,8 +349,16 @@ class EknapsackGreedy:
     def PartialSoln(self, item):
         self._PartialSoln = item
 
+    @property
+    def BranchingIdentifier(self):
+        return self._BranchingIdentifier
+
+    @BranchingIdentifier.setter
+    def BranchingIdentigier(self, value):
+        self._BranchingIdentifier = value
+
     @staticmethod
-    def BB(rootProblem, verbose=False):
+    def BB(rootProblem):
         """
             A static method for evaluation the whole Eknapsack problem
         :param rootProblem:
@@ -300,28 +366,32 @@ class EknapsackGreedy:
         :return:
             optimal solution.
         """
+        Class = EknapsackGreedy
         def Initialization():
             S, _, _ = rootProblem.greedy_solve()
             S = dict([(I, V) for I, V in S.items() if int(V) == V])
             ObjVal = sum(rootProblem[0, I]*V for I, V in S.items())
-            if verbose:
-                print(f"BB executing with war start solution and objective value: ")
-                print(S)
-                print(ObjVal)
+            Class.log(f"BB executing with war start solution and objective value: ")
+            Class.log(S)
+            Class.log(ObjVal)
             return S, ObjVal
         GIntSoln, GObjVal = Initialization()
         Stack = [rootProblem]
         while len(Stack) != 0:
             P = Stack.pop()
             P.greedy_solve()
-            if verbose:
-                print(P)
+            Class.log(P)
             GIntSoln, GObjVal, SubP1, SubP2 = P.branch(GObjVal, GIntSoln)
             if SubP1 is not None:
                 Stack.append(SubP1)
             if SubP2 is not None:
                 Stack.append(SubP2)
         return GIntSoln, GObjVal
+
+    @classmethod
+    def log(cls, msg):
+        if cls.Verbose:
+            print(msg)
 
 
 
@@ -428,35 +498,64 @@ def main():
         EKnapSack = EknapsackGreedy(P, W, C, B)
         print(EknapsackGreedy.BB(EKnapSack))
 
-    def CheckAgainstLP():
+
+    def CheckAgainstPulp():
         import time
         FailedTests = 0
         TotalTests = 500
+        ConditionsNumberPassed, ConditionNumberFailed = [], []
         for _ in range(TotalTests):
 
-            PWC, B = make_extended_knapsack_problem(5, 0.3)
+            PWC, B = make_extended_knapsack_problem(4, 0.3)
             P, W, C = map(list, zip(*PWC))
 
             KnapsackInstance1 = EknapsackGreedy(P, W, C, B)
             KnapsackInstance2 = EknapsackSimplex(P, W, C, B)
             # ----------------------------------------------------------------------------------------------------------
-            Soln1, Obj1 = KnapsackInstance1.solve()
-            Soln2, Obj2= KnapsackInstance2.solve()
-            # print(Soln1, Soln2)
+            try:
+                Soln1, Obj1 = KnapsackInstance1.solve()
+                Soln2, Obj2= KnapsackInstance2.solve()
+                # print(Soln1, Soln2)
 
-            if abs(Obj1 - Obj2) > 1e-14:
-                FailedTests += 1
-                print(f"Failed on inputs: {PWC, B}, \n obj is like: {Obj1, Obj2}")
-                print(f"Solutions are like: {Soln1, Soln2}")
-            else:
-                print(P, W, C, B, " : passed")
+                if abs(Obj1 - Obj2) > 1e-14:
+                    FailedTests += 1
+                    print(f"Failed on inputs: {PWC, B}, \n obj is like: {Obj1, Obj2}")
+                    print(f"Solutions are like: {Soln1, Soln2}")
+                    print(f"condition number of the constraint matrix is: {KnapsackInstance1.check_condition()[0]}")
+                    ConditionNumberFailed.append(KnapsackInstance1.check_condition()[0])
+                else:
+                    print(P, W, C, B, " : passed")
+                    ConditionsNumberPassed.append(KnapsackInstance1.check_condition()[0])
+            except lp.apis.core.PulpSolverError:
+                print(f"Pulp Solver error")
+                print(f"Constraint matrix condition: {KnapsackInstance1.check_condition()[0]}")
+                ConditionNumberFailed.append(KnapsackInstance1.check_condition()[0])
 
         print(f"Failed: {FailedTests}")
+        print(f"Failed Tests condition numbers: ")
+        print(ConditionNumberFailed)
+        print(f"Passed Tests condition numbers: ")
+        print(ConditionsNumberPassed)
+
+
+
+    def condition_checking():
+        PWC, B= ([(0.79, 0.38, 2), (0.35, 0.19, 4), (0.23, 0.01, 5), (0.89, 0.6, 4), (0.9, 0.63, 1)], 1.38)
+        P, W, C = map(list, zip(*PWC))
+        KnapscakInstance = EknapsackGreedy(P, W, C, B)
+        print()
+        print(KnapscakInstance.check_condition())
+
+
+    def InvestigateNumericalInstability():
+
+        pass
 
 
     # RunBB()
     # LPFormulation()
-    CheckAgainstLP()
+    CheckAgainstPulp()
+    condition_checking()
 
 if __name__ == "__main__":
     main()
