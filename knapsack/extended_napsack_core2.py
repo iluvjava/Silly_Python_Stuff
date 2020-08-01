@@ -39,6 +39,8 @@
 
     Conclusion:
         * The problem is not related to the numerical stability of inversing the constraint matrix.
+        * Numerial instability is introduced by integral solution with a extremely small slack, which renders an
+        infeasible solution feasible or vice versa.
 
 
 
@@ -394,12 +396,10 @@ class EknapsackGreedy:
             print(msg)
 
 
-
 class EknapsackSimplex:
     """
         This class will reduce the problem to LP, so it can be compare with the
         BB native python implementations for correctness and efficiency.
-
     """
 
     def __init__(self,
