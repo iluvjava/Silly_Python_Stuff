@@ -42,7 +42,8 @@
         * Numerial instability is introduced by integral solution with a extremely small slack, which renders an
         infeasible solution feasible or vice versa.
 
-
+    TODO: Fix the problem of numerical instability:
+    -- Limited Scope Rational Computing.
 
 """
 from typing import *

@@ -36,7 +36,6 @@ def soln(a: int, b: int, R: Dict[Tuple, int] = {}):
     return R[a, b]
 
 
-
 def main():
     print(f"partition of 0: {soln(0, 0)}")
     print(f"partition of 3: {soln(3, 3)}")
