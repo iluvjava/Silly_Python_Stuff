@@ -44,6 +44,8 @@
 
     TODO: Fix the problem of numerical instability:
     -- Limited Scope Rational Computing.
+        * Control it in the inner scope of the greedy solving method, that is the place where most of the
+        computations happened.
 
 """
 from typing import *
@@ -545,7 +547,6 @@ def main():
         print(ConditionNumberFailed)
         print(f"Passed Tests condition numbers: ")
         print(ConditionsNumberPassed)
-
 
 
     def UnstableInstance():
