@@ -24,7 +24,7 @@
         obj is like: (1.583, 1.4387999999999999)
         Solutions are like: ({0: 2, 3: 1}, {2: 1.0, 3: 2.0})
 
-    -- For this instance, my algorithm produced sub-optimal solution:
+    -- For this instance, my algorithm produced sub-optimal solfution:
         Failed on inputs: ([(0.79, 0.38, 2), (0.35, 0.19, 4), (0.23, 0.01, 5), (0.89, 0.6, 4), (0.9, 0.63, 1)], 1.38),
         obj is like: (3.55, 3.7800000000000002)
         Solutions are like: ({1: 3, 0: 2, 2: 4}, {0: 2.0, 1: 3.0, 2: 5.0})
@@ -102,6 +102,11 @@ class EknapsackGreedy:
         ** This class is going to handle the branching of the BB also, so it makes the codes for the BB Very
         high level.
 
+        [!!]
+        ALL INPUTS WILL BE ROUNDED TO MACHINE EPISLON (1e-15) to accomodate the numerical stability!
+
+        USE the Static method for instantiation.
+
     """
     Verbose = False
     def __init__(self,
@@ -127,13 +132,15 @@ class EknapsackGreedy:
         """
         assert all(I >= 0 for I in counts), "Item's counts cannot be negative."
         assert all(len(I) == len(profits) for I in [profits, weights, counts])
+
         self._P, self._W, self._C, self._B = profits, weights, counts, budget
         # check if the problem will produce unique solution ------------------------------------------------------------
         Values = [((self._P[I] / self._W[I], I) if self._W[I] != 0 else (float("+inf"), I)) for I in range(self.Size)]
         Values.sort(key=(lambda x: x[0]), reverse=True)
         Values = [I for _, I in Values]
         self._SolutionUnique =  sum((1 if Values[I] == Values[I+1] else 0) for I in range(self.Size - 1)) <= 0  # ------
-
+        if not self._SolutionUnique:
+            print("[WARN]: Solution this instance of knapsack might be non-unique.")
         # Initialize as an root problem for bb -------------------------------------------------------------------------
         self._PartialSoln = {}
         self._Indices = set(range(self.Size))  # -----------------------------------------------------------------------
@@ -408,6 +415,19 @@ class EknapsackGreedy:
             print(msg)
 
 
+    @staticmethod
+    def Instanciate(profits: List[Union[float, int]],
+                    weights: List[Union[float, int]],
+                    counts: List[int], # This one has to be an int, if not, then this knapsack problem doesn't make sense.
+                    budget: Union[float, int]):
+        def RoundAll(array):
+            return list(map(lambda x: round(x, 15), array))
+        P, W, C, B = RoundAll(profits), RoundAll(weights), RoundAll(counts), round(budget, 15)
+        return EknapsackGreedy(P, W, C, B)
+
+
+
+
 class EknapsackSimplex:
     """
         This class will reduce the problem to LP, so it can be compare with the
@@ -518,7 +538,7 @@ def main():
         ConditionsNumberPassed, ConditionNumberFailed = [], []
         for _ in range(TotalTests):
 
-            PWC, B = make_extended_knapsack_problem(4, 0.3)
+            PWC, B = make_extended_knapsack_problem(5, 0.3)
             P, W, C = map(list, zip(*PWC))
 
             KnapsackInstance1 = EknapsackGreedy(P, W, C, B)
@@ -529,7 +549,7 @@ def main():
                 Soln2, Obj2= KnapsackInstance2.solve()
                 # print(Soln1, Soln2)
 
-                if abs(Obj1 - Obj2) > 1e-14:
+                if abs(Obj1 - Obj2) > 1e-15:
                     FailedTests += 1
                     print(f"Failed on inputs: {PWC, B}, \n obj is like: {Obj1, Obj2}")
                     print(f"Solutions are like: {Soln1, Soln2}")
@@ -553,7 +573,7 @@ def main():
     def UnstableInstance():
         PWC, B = ([(0.79, 0.38, 2), (0.35, 0.19, 4), (0.23, 0.01, 5), (0.89, 0.6, 4), (0.9, 0.63, 1)], 1.38)
         P, W, C = map(list, zip(*PWC))
-        KnapscakInstance = EknapsackGreedy(P, W, C, B)
+        KnapscakInstance = EknapsackGreedy.Instanciate(P, W, C, B)
         return KnapscakInstance
 
     def InvestigateNumericalInstability():

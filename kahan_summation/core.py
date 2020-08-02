@@ -28,7 +28,7 @@ def kahan_sum(theList: List[float]) -> float:
         else:
             Compensator += (I - T) + Sum  # If summees are on the similar scale, this rarely happens.  -----------------
         Sum = T
-    return round(Sum + Compensator, 15)
+    return Sum + Compensator
 
 
 class KahanRunningSum:
@@ -70,7 +70,7 @@ class KahanRunningSum:
         return self.Sum / other
 
     def __eq__(self, other):
-        return abs(self.Sum - other) <= 1e-16
+        return self.Sum - other == 1e-16
 
     def __lt__(self, other):
         return self.Sum < other
@@ -85,7 +85,7 @@ class KahanRunningSum:
         return self.Sum >= other
 
     def __ne__ (self, other):
-        return abs(self.Sum - other) > 1e-16
+        return self.Sum - other != 1e-16
 
 
 

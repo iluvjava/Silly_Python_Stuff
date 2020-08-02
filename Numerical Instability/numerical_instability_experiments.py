@@ -14,7 +14,7 @@ import fractions as frac
 
 def rand_list(size) -> List[float]:
     import random as rand
-    return [round(rand.random()*20, 2) for _ in range(size)]
+    return [round(rand.random()*2 - 1, 16) for _ in range(size)]
 
 
 def naive_sum(theList:List[float]) -> float:
@@ -52,6 +52,7 @@ def main():
             S2 = sum1(TheList)
             S3 = sum2(TheList)
             if S2 != S3:
+                print(f"{S2}!={S3}")
                 Wrong += 1
         print(f"% of trials they disagree: {Wrong/Trials}, the size of the list is: {ListSize}")
 
@@ -61,7 +62,7 @@ def main():
 
     print(f"Bench Marking Khan-Sum with Rational Sum: ")
 
-    BenchMark1(khan_sum, rational_sum, Trials=1000, ListSize=200)
+    BenchMark1(khan_sum, rational_sum, Trials=100, ListSize=1000)
 
 
 if __name__ == "__main__":
