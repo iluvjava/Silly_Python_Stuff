@@ -53,6 +53,7 @@ import pulp as lp
 import random as rnd
 import fractions as frac
 import numpy as np
+from kahan_summation import core as ksum
 
 RealNumberList = List[Union[float, int]]
 
@@ -184,16 +185,16 @@ class EknapsackGreedy:
             Values = [((P[I]/W[I], I) if W[I] != 0 else (float("+inf"), I)) for I in range(len(P))]
             Values.sort(key=(lambda x: x[0]), reverse=True)  # Sort by item's values -----------------------------------
             Soln = {}
-            RemainingBudge = B
+            RemainingBudget = ksum.KahanRunningSum(B)
             for _, Idx in Values:
                 if W[Idx] == 0:
                     Soln[Idx] = C[Idx]
                 else:
-                    if RemainingBudge <= 0:
+                    if RemainingBudget.Sum <= 0:
                         break
-                    ToTake = min(RemainingBudge/W[Idx], C[Idx])
+                    ToTake = min(RemainingBudget/W[Idx], C[Idx])
                     Soln[Idx] = ToTake
-                    RemainingBudge -= ToTake*W[Idx]
+                    RemainingBudget -= ToTake*W[Idx]
             return Soln
 
         # Problem Digest------------------------------------------------------------------------------------------------
@@ -202,7 +203,7 @@ class EknapsackGreedy:
         for K, V in AlreadyDecidedSoln.items():
             # Take partial solution into account.
             C[K] -= V
-        B = self._B - sum(self._W[K]*V for K, V in AlreadyDecidedSoln.items())
+        B = ksum.kahan_sum([(-self._W[K]*V) for K, V in AlreadyDecidedSoln.items()] + [self._B])
         # Infeasible, Pruned -------------------------------------------------------------------------------------------
         if B < 0:
             self._ObjVal = float("-inf")
@@ -224,7 +225,7 @@ class EknapsackGreedy:
             else:
                 AlreadyDecidedSoln[K] += V
         self.__GreedySoln = AlreadyDecidedSoln
-        self._ObjVal = sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items())
+        self._ObjVal = ksum.kahan_sum(self._P[K]*V for K, V in AlreadyDecidedSoln.items())
         self._FractIndx = FracIdx
         # Returning the solution ---------------------------------------------------------------------------------------
         return self.__GreedySoln, self._ObjVal, self._FractIndx
@@ -383,7 +384,7 @@ class EknapsackGreedy:
         def Initialization():
             S, _, _ = rootProblem.greedy_solve()
             S = dict([(I, V) for I, V in S.items() if int(V) == V])
-            ObjVal = sum(rootProblem[0, I]*V for I, V in S.items())
+            ObjVal = ksum.kahan_sum(rootProblem[0, I]*V for I, V in S.items())
             Class.log(f"BB executing with warm start solution and objective value: ")
             Class.log(S)
             Class.log(ObjVal)
@@ -446,7 +447,7 @@ class EknapsackSimplex:
         for I, Var in self._X.items():
             if Var.varValue != 0:
                 Soln[I] = Var.varValue
-        return Soln, sum(V*self._P[I] for I, V in Soln.items())
+        return Soln, ksum.kahan_sum(V*self._P[I] for I, V in Soln.items())
 
     @property
     def LpProblem(self):
@@ -563,6 +564,7 @@ def main():
 
     # RunBB()
     # LPFormulation()
+    CheckAgainstPulp()
     InvestigateNumericalInstability()
 
 
