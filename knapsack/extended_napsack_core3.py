@@ -13,7 +13,7 @@
     possible that, in future branching, that constraint x_i < floor(x_i_tilde) ceases to be a tight one.
 
     ====================================================================================================================
-    TODO: Investiage this if possible:
+    TODO: Investigates this if possible:
     -- For this instance, the CBC pulp solver produced an sub-optimal solution to the problem.
         Failed on inputs: ([(0.14, 0.02, 2), (0.33, 0.9, 3), (0.65, 0.82, 2), (0.95, 0.28, 1), (0.64, 0.78, 2)], 1.866),
         obj is like: (2.37, 1.88)
@@ -416,14 +416,23 @@ class EknapsackGreedy:
     @staticmethod
     def Instanciate(profits: List[Union[float, int]],
                     weights: List[Union[float, int]],
-                    counts: List[int], # This one has to be an int, if not, then this knapsack problem doesn't make sense.
+                    # This one has to be an int, if not, then this knapsack problem doesn't make sense.
+                    counts: List[int],
                     budget: Union[float, int]):
+        """
+            The instanciateter will smooth out the floats for all the quantities, it rounds all floats
+            for the inputs to 1e-15, so that the numerical stabilizing algorithm can return correct solution
+            in the end.
+        :param profits:
+        :param weights:
+        :param counts:
+        :param budget:
+        :return:
+        """
         def RoundAll(array):
             return list(map(lambda x: round(x, 15), array))
         P, W, C, B = RoundAll(profits), RoundAll(weights), RoundAll(counts), round(budget, 15)
         return EknapsackGreedy(P, W, C, B)
-
-
 
 
 class EknapsackSimplex:

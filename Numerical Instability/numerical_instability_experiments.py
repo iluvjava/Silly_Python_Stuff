@@ -10,6 +10,8 @@
 """
 from typing import *
 import fractions as frac
+import numpy as np
+import statistics as stats
 
 
 def rand_list(size) -> List[float]:
@@ -44,25 +46,28 @@ def khan_sum(theList: List[float]) -> float:
     return Sum + Compensator
 
 
+def numpy_sum(theList: List[float]) -> float:
+    return np.sum(theList)
+
 def main():
-    def BenchMark1(sum1, sum2, Trials = 1000, ListSize = 20):
+    def GetListofErrorsFor(sum1:callable, trials:int=1000, listSize:int=20):
         print("Benchmarking... ")
-        Wrong = 0
-        for TheList in [rand_list(ListSize) for _ in range(Trials)]:
+        Errors = []
+        for TheList in [rand_list(listSize) for _ in range(trials)]:
             S2 = sum1(TheList)
-            S3 = sum2(TheList)
-            if S2 != S3:
-                print(f"{S2}!={S3}")
-                Wrong += 1
-        print(f"% of trials they disagree: {Wrong/Trials}, the size of the list is: {ListSize}")
+            S3 = rational_sum(TheList)
+            Errors.append(abs(S2 - S3))
+        return Errors
 
     print(f"Bench marking Python Sum against Rational Sum: ")
 
-    BenchMark1(python_sum, rational_sum)
+    print(GetListofErrorsFor(python_sum, trials=100, listSize=1000))
 
     print(f"Bench Marking Khan-Sum with Rational Sum: ")
 
-    BenchMark1(khan_sum, rational_sum, Trials=100, ListSize=1000)
+    print(GetListofErrorsFor(khan_sum, trials=100, listSize=1000))
+
+    print(GetListofErrorsFor(numpy_sum, trials=100, listSize=1000))
 
 
 if __name__ == "__main__":
