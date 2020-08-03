@@ -16,7 +16,7 @@ import statistics as stats
 
 def rand_list(size) -> List[float]:
     import random as rand
-    return [(rand.random()*2e10 - 1e10 )for _ in range(size)]
+    return [(rand.random()*2e8 - 1e8)for _ in range(size)]
 
 
 def naive_sum(theList:List[float]) -> float:
@@ -50,6 +50,7 @@ def numpy_sum(theList: List[float]) -> float:
     return np.sum(theList)
 
 def main():
+
     def GetListofErrorsFor(sum1:callable, trials:int=1000, listSize:int=20):
         print("Benchmarking... ")
         Errors = []
