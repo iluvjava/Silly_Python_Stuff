@@ -149,8 +149,6 @@ class EknapsackGreedy:
         self.__GreedySoln, self._ObjVal, self._FractIndx = None, None, None  # -----------------------------------------
         self._BranchingIdentifier = branchingIdentifier  # This is for debugging ---------------------------------------
 
-
-
     def greedy_solve(self):
         """
             This function serves as heuristics for the BB, and it returns the list of

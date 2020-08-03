@@ -11,7 +11,7 @@ from typing import *
 
 def rand_list(size) -> List[float]:
     import random as rand
-    return [round(rand.random()*20, 2) for _ in range(size)]
+    return [(rand.random()*20 - 10) for _ in range(size)]
 
 
 def rational_sum(theList: List[float]) -> float:
@@ -86,8 +86,6 @@ class KahanRunningSum:
 
     def __ne__ (self, other):
         return self.Sum - other != 1e-16
-
-
 
 
 def main():

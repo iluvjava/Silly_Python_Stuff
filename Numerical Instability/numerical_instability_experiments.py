@@ -14,7 +14,7 @@ import fractions as frac
 
 def rand_list(size) -> List[float]:
     import random as rand
-    return [round(rand.random()*2 - 1, 16) for _ in range(size)]
+    return [(rand.random()*2e10 - 1e10 )for _ in range(size)]
 
 
 def naive_sum(theList:List[float]) -> float:
