@@ -12,6 +12,7 @@ from typing import *
 import fractions as frac
 import numpy as np
 import statistics as stats
+import matplotlib.pyplot as pyplt
 
 
 def rand_list(size) -> List[float]:
@@ -49,26 +50,103 @@ def khan_sum(theList: List[float]) -> float:
 def numpy_sum(theList: List[float]) -> float:
     return np.sum(theList)
 
+
+def python_fsum(theList: List[float]) -> float:
+    import math
+    return math.fsum(theList)
+
+
 def main():
 
     def GetListofErrorsFor(sum1:callable, trials:int=1000, listSize:int=20):
-        print("Benchmarking... ")
         Errors = []
         for TheList in [rand_list(listSize) for _ in range(trials)]:
             S2 = sum1(TheList)
             S3 = rational_sum(TheList)
             Errors.append(abs(S2 - S3))
-        return Errors
+        return stats.mean(Errors), stats.stdev(Errors)
 
-    print(f"Bench marking Python Sum against Rational Sum: ")
+    def GetExecutionTimeFor(fxn: callable, trials: int=1000, listSize: int=20):
+        import time
+        Times = []
+        for TheList in [rand_list(listSize) for _ in range(trials)]:
+            TStart = time.time()
+            fxn(TheList)
+            Times.append(time.time() - TStart)
+        return stats.mean(Times), stats.stdev(Times)
 
-    print(GetListofErrorsFor(python_sum, trials=100, listSize=1000))
+    def BenchMarkOnErrors():
+        ErrorsMeanPythonSum, Sizes = [], list(range(10, 2000, 10))
+        ErrorsmeanNumpySum = []
+        ErrorMeanStdPythonSum, ErrorMeanStdNumpySum = [], []
+        for I in Sizes:
+            LoopTempVar = GetListofErrorsFor(python_sum, trials=30, listSize=I)
+            ErrorsMeanPythonSum.append(LoopTempVar[0])
+            ErrorMeanStdPythonSum.append(LoopTempVar[1])
+            LoopTempVar = GetListofErrorsFor(numpy_sum, trials=30, listSize=I)
+            ErrorsmeanNumpySum.append(LoopTempVar[0])
+            ErrorMeanStdNumpySum.append(LoopTempVar[1])
+        # Plot the Mean of Errors --------------------------------------------------------------------------------------
+        fig, ax = pyplt.subplots()
+        pyplt.scatter(Sizes, ErrorsMeanPythonSum, label="Default Sum Mean Errors")
+        pyplt.scatter(Sizes, ErrorsmeanNumpySum, color="r", label="Numpy Sum Mean Errors")
+        legend = ax.legend(loc='upper left', shadow=True, fontsize='small')
+        ax.set_xlabel("Array Size")
+        ax.set_ylabel("Errors")
 
-    print(f"Bench Marking Khan-Sum with Rational Sum: ")
+        # Plot the Std curve -------------------------------------------------------------------------------------------
+        PythonSumStds = ([M + D for M, D in zip(ErrorsMeanPythonSum, ErrorMeanStdPythonSum)],
+                         [M - D for M, D in zip(ErrorsMeanPythonSum, ErrorMeanStdPythonSum)])
+        NumpySumStds = ([M + D for M, D in zip(ErrorsmeanNumpySum, ErrorMeanStdNumpySum)],
+                         [M - D for M, D in zip(ErrorsmeanNumpySum, ErrorMeanStdNumpySum)])
+        pyplt.plot(Sizes, PythonSumStds[0], color="b")
+        pyplt.plot(Sizes, PythonSumStds[1], color="b")
+        pyplt.plot(Sizes, NumpySumStds[0], color="r")
+        pyplt.plot(Sizes, NumpySumStds[1], color = "r")
 
-    print(GetListofErrorsFor(khan_sum, trials=100, listSize=1000))
+        # Plot and save these things -----------------------------------------------------------------------------------
+        pyplt.savefig("Error plots for Numpy, and default python.png", dpi=400)
+        pyplt.show()
 
-    print(GetListofErrorsFor(numpy_sum, trials=100, listSize=1000))
+
+
+    def BenchMarkOnTimesFor(fxn: callable, sizes: List[int]):
+        Means, Upper, Lower = [], [], []
+
+        for I in sizes:
+            TheSumMeans, TheSumStd, = GetExecutionTimeFor(fxn, trials=30, listSize=I)
+            Means.append(TheSumMeans)
+            Upper.append(TheSumMeans + TheSumStd)
+            Lower.append(TheSumMeans - TheSumStd)
+
+        return Means, Upper, Lower
+
+
+    def PlotTheExecutionTime():
+
+        fig, ax = pyplt.subplots()
+        Xs = list(range(10, 2000, 10))
+        Means, Upper, Lower = BenchMarkOnTimesFor(fxn=khan_sum, sizes=Xs)
+        ax.scatter(Xs, Means, color="r")
+
+        Means, Upper, Lower = BenchMarkOnTimesFor(fxn=python_fsum, sizes=Xs)
+        ax.scatter(Xs, Means, color="b")
+
+        Means, Upper, Lower = BenchMarkOnTimesFor(fxn=numpy_sum, sizes=Xs)
+        ax.scatter(Xs, Means, color="g")
+
+        Means, Upper, Lower = BenchMarkOnTimesFor(fxn=rational_sum, sizes=Xs)
+        ax.scatter(Xs, Means, color="yellow")
+        fig.show()
+
+
+
+    # BenchMarkOnErrors()
+    PlotTheExecutionTime()
+
+
+
+
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@
 __all__ = ["kahan_sum", "KahanRunningSum"]
 
 from typing import *
+import math as math
 
 
 def rand_list(size) -> List[float]:
@@ -42,7 +43,10 @@ class KahanRunningSum:
 
     @property
     def Sum(self):
-        return round(self.__Sum + self.__Compensator, 15)
+        return self.__Sum + self.__Compensator
+
+    def __float__(self):
+        return float(self.Sum)
 
     def __iadd__(self, other):
         """
@@ -70,7 +74,7 @@ class KahanRunningSum:
         return self.Sum / other
 
     def __eq__(self, other):
-        return self.Sum - other == 1e-16
+        return abs(self.Sum - other) <= 1e16
 
     def __lt__(self, other):
         return self.Sum < other
@@ -85,7 +89,7 @@ class KahanRunningSum:
         return self.Sum >= other
 
     def __ne__ (self, other):
-        return self.Sum - other != 1e-16
+        return abs(self.Sum - other) > 1e-16
 
 
 def main():
@@ -97,4 +101,5 @@ def main():
     print(KSum.Sum, Sum1)
 
 if __name__ == "__main__":
+
     main()

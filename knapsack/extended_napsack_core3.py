@@ -54,6 +54,7 @@ import random as rnd
 import fractions as frac
 import numpy as np
 from kahan_summation import core as ksum
+import quick_json as qj
 
 RealNumberList = List[Union[float, int]]
 
