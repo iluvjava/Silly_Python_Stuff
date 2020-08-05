@@ -13,6 +13,7 @@ import fractions as frac
 import numpy as np
 import statistics as stats
 import matplotlib.pyplot as pyplt
+import quick_json as qj
 
 
 def rand_list(size) -> List[float]:
@@ -77,19 +78,19 @@ def main():
 
     def BenchMarkOnErrors():
         ErrorsMeanPythonSum, Sizes = [], list(range(10, 2000, 10))
-        ErrorsmeanNumpySum = []
+        ErrorsMeanNumpySum = []
         ErrorMeanStdPythonSum, ErrorMeanStdNumpySum = [], []
         for I in Sizes:
             LoopTempVar = GetListofErrorsFor(python_sum, trials=30, listSize=I)
             ErrorsMeanPythonSum.append(LoopTempVar[0])
             ErrorMeanStdPythonSum.append(LoopTempVar[1])
             LoopTempVar = GetListofErrorsFor(numpy_sum, trials=30, listSize=I)
-            ErrorsmeanNumpySum.append(LoopTempVar[0])
+            ErrorsMeanNumpySum.append(LoopTempVar[0])
             ErrorMeanStdNumpySum.append(LoopTempVar[1])
         # Plot the Mean of Errors --------------------------------------------------------------------------------------
         fig, ax = pyplt.subplots()
         pyplt.scatter(Sizes, ErrorsMeanPythonSum, label="Default Sum Mean Errors")
-        pyplt.scatter(Sizes, ErrorsmeanNumpySum, color="r", label="Numpy Sum Mean Errors")
+        pyplt.scatter(Sizes, ErrorsMeanNumpySum, color="r", label="Numpy Sum Mean Errors")
         legend = ax.legend(loc='upper left', shadow=True, fontsize='small')
         ax.set_xlabel("Array Size")
         ax.set_ylabel("Errors")
@@ -97,8 +98,8 @@ def main():
         # Plot the Std curve -------------------------------------------------------------------------------------------
         PythonSumStds = ([M + D for M, D in zip(ErrorsMeanPythonSum, ErrorMeanStdPythonSum)],
                          [M - D for M, D in zip(ErrorsMeanPythonSum, ErrorMeanStdPythonSum)])
-        NumpySumStds = ([M + D for M, D in zip(ErrorsmeanNumpySum, ErrorMeanStdNumpySum)],
-                         [M - D for M, D in zip(ErrorsmeanNumpySum, ErrorMeanStdNumpySum)])
+        NumpySumStds = ([M + D for M, D in zip(ErrorsMeanNumpySum, ErrorMeanStdNumpySum)],
+                         [M - D for M, D in zip(ErrorsMeanNumpySum, ErrorMeanStdNumpySum)])
         pyplt.plot(Sizes, PythonSumStds[0], color="b")
         pyplt.plot(Sizes, PythonSumStds[1], color="b")
         pyplt.plot(Sizes, NumpySumStds[0], color="r")
@@ -107,6 +108,16 @@ def main():
         # Plot and save these things -----------------------------------------------------------------------------------
         pyplt.savefig("Error plots for Numpy, and default python.png", dpi=400)
         pyplt.show()
+
+        JsonData = {}
+        JsonData["Sizes"] = Sizes
+        JsonData["ErrorsMeanPythonSum"] = ErrorsMeanPythonSum
+        JsonData["ErrorsMeanNumpySum"] = ErrorsMeanNumpySum
+        JsonData["PythonSumStdUpper"], JsonData["PythonSumStdLower"] = PythonSumStds[0], PythonSumStds[1]
+        JsonData["NumpySumStdUpper"], JsonData["NumpySumStdLower"] = NumpySumStds[0], NumpySumStds[1]
+
+
+
 
 
 
@@ -125,19 +136,29 @@ def main():
     def PlotTheExecutionTime():
 
         fig, ax = pyplt.subplots()
-        Xs = list(range(10, 2000, 10))
+        Xs = list(range(10, 500, 10))
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=khan_sum, sizes=Xs)
-        ax.scatter(Xs, Means, color="r")
+        ax.scatter(Xs, Means, color="r", s=0.5, label="Kahan sum")
 
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=python_fsum, sizes=Xs)
-        ax.scatter(Xs, Means, color="b")
+        ax.scatter(Xs, Means, color="b", s=0.5, label="python fsum")
 
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=numpy_sum, sizes=Xs)
-        ax.scatter(Xs, Means, color="g")
+        ax.scatter(Xs, Means, color="g", s=0.5, label="numpy sum")
 
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=rational_sum, sizes=Xs)
-        ax.scatter(Xs, Means, color="yellow")
+        ax.scatter(Xs, Means, color="black", s=0.5, label="rational sum")
+
+        legend = ax.legend(loc='upper left', shadow=True, fontsize='small')
+        ax.set_xlabel("Array Size")
+        ax.set_ylabel("Execution time/sec")
+
+        pyplt.savefig("Execution time.png", dpi=400)
+
         fig.show()
+
+
+
 
 
 
