@@ -108,19 +108,13 @@ def main():
         # Plot and save these things -----------------------------------------------------------------------------------
         pyplt.savefig("Error plots for Numpy, and default python.png", dpi=400)
         pyplt.show()
-
         JsonData = {}
         JsonData["Sizes"] = Sizes
         JsonData["ErrorsMeanPythonSum"] = ErrorsMeanPythonSum
         JsonData["ErrorsMeanNumpySum"] = ErrorsMeanNumpySum
         JsonData["PythonSumStdUpper"], JsonData["PythonSumStdLower"] = PythonSumStds[0], PythonSumStds[1]
         JsonData["NumpySumStdUpper"], JsonData["NumpySumStdLower"] = NumpySumStds[0], NumpySumStds[1]
-
         qj.json_encode(JsonData, "errors.json")
-
-
-
-
 
     def BenchMarkOnTimesFor(fxn: callable, sizes: List[int]):
         Means, Upper, Lower = [], [], []
@@ -163,20 +157,12 @@ def main():
         ax.set_ylabel("Execution time/sec")
         pyplt.savefig("Execution time.png", dpi=400)
         # showing and saving stuff: ------------------------------------------------------------------------------------
-
         fig.show()
         qj.json_encode(JsonData, "Execution time.json")
 
 
-
-
-
-
-
     BenchMarkOnErrors()
     PlotTheExecutionTime()
-
-
 
 
 

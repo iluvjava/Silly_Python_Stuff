@@ -47,6 +47,11 @@
         * Control it in the inner scope of the greedy solving method, that is the place where most of the
         computations happened.
 
+
+    Failed on inputs: ([(0.1562, 0.1656, 2), (0.7476, 0.1557, 4), (0.9818, 0.3556, 3), (0.4493, 0.9731, 2), (0.0751, 0.7573, 2)], 1.64448),
+    obj is like: (5.1882, 5.1102)
+    Solutions are like: ({2: 3, 1: 3}, {0: 1.0, 1: 4.0, 2: 2.0})
+
 """
 from typing import *
 import pulp as lp
@@ -72,7 +77,7 @@ def make_extended_knapsack_problem(size: int, density: float, itemsCounts=5):
     assert 0 < density < 1, "density must be a quantity that is between 0 and 1. "
     ToReturn = [(rnd.random(), rnd.random(),  int(rnd.random()*itemsCounts) + 1) for _ in range(size)]
     ToReturn = list(map(lambda x: (round(x[0], 4), round(x[1], 4), x[2]), ToReturn))
-    Budget = sum(W*C for _, W, C in ToReturn)*density
+    Budget = ksum.kahan_sum(W*C for _, W, C in ToReturn)*density
     return ToReturn, Budget
 
 
@@ -198,7 +203,7 @@ class EknapsackGreedy:
                 else:
                     if RemainingBudget.Sum <= 0:
                         break
-                    ToTake = min(RemainingBudget/W[Idx], C[Idx])
+                    ToTake = min(RemainingBudget/W[Idx], 15, C[Idx])
                     Soln[Idx] = ToTake
                     RemainingBudget -= ToTake*W[Idx]
             return Soln
@@ -209,7 +214,10 @@ class EknapsackGreedy:
         for K, V in AlreadyDecidedSoln.items():
             # Take partial solution into account.
             C[K] -= V
-        B = ksum.kahan_sum([(-self._W[K]*V) for K, V in AlreadyDecidedSoln.items()] + [self._B])
+        Temp = [(-self._W[K]*V) for K, V in AlreadyDecidedSoln.items()]
+        Temp.append(self._B)
+        B = ksum.kahan_sum(Temp)
+        Temp = None
         # Infeasible, Pruned -------------------------------------------------------------------------------------------
         if B < 0:
             self._ObjVal = float("-inf")

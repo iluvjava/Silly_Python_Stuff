@@ -43,7 +43,8 @@ class KahanRunningSum:
 
     @property
     def Sum(self):
-        return self.__Sum + self.__Compensator
+        return round(self.__Sum + self.__Compensator, 15)  # must round it. Because the final difference might make
+        # another truncation error.
 
     def __float__(self):
         return float(self.Sum)
@@ -55,12 +56,12 @@ class KahanRunningSum:
             Float, ints, or whatever.
         :return:
         """
-        T = self.__Sum + other
+        Temp = self.__Sum + other
         if abs(self.__Sum) >= abs(other):
-            self.__Compensator += (self.__Sum - T) + other
+            self.__Compensator += (self.__Sum - Temp) + other
         else:
-            self.__Compensator += (other - T) + self.__Sum
-        self.__Sum = T
+            self.__Compensator += (other - Temp) + self.__Sum
+        self.__Sum = Temp
         return self
 
     def __isub__(self, other):
@@ -93,7 +94,7 @@ class KahanRunningSum:
 
 
 def main():
-    RandSum = rand_list(99999)
+    RandSum = rand_list(9999)
     Sum1 = rational_sum(RandSum)
     KSum = KahanRunningSum()
     for S in RandSum:
