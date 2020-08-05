@@ -13,7 +13,7 @@ import fractions as frac
 import numpy as np
 import statistics as stats
 import matplotlib.pyplot as pyplt
-import quick_json as qj
+import quick_json.quick_json as qj
 
 
 def rand_list(size) -> List[float]:
@@ -116,6 +116,7 @@ def main():
         JsonData["PythonSumStdUpper"], JsonData["PythonSumStdLower"] = PythonSumStds[0], PythonSumStds[1]
         JsonData["NumpySumStdUpper"], JsonData["NumpySumStdLower"] = NumpySumStds[0], NumpySumStds[1]
 
+        qj.json_encode(JsonData, "errors.json")
 
 
 
@@ -134,35 +135,45 @@ def main():
 
 
     def PlotTheExecutionTime():
+        # Prepare the Json to store things -----------------------------------------------------------------------------
+        JsonData = {}
 
         fig, ax = pyplt.subplots()
         Xs = list(range(10, 500, 10))
+        JsonData["Sizes"] = Xs
+        # Calling the modules and scatter plot the data ----------------------------------------------------------------
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=khan_sum, sizes=Xs)
         ax.scatter(Xs, Means, color="r", s=0.5, label="Kahan sum")
+        JsonData["Kahan Sum"] = {"Means": Means, "Upper": Upper, "Lower": Lower}
 
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=python_fsum, sizes=Xs)
         ax.scatter(Xs, Means, color="b", s=0.5, label="python fsum")
+        JsonData["Python Fsum"] = {"Means": Means, "Upper": Upper, "Lower": Lower}
 
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=numpy_sum, sizes=Xs)
         ax.scatter(Xs, Means, color="g", s=0.5, label="numpy sum")
+        JsonData["Numpy Sum"] = {"Means": Means, "Upper": Upper, "Lower": Lower}
 
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=rational_sum, sizes=Xs)
         ax.scatter(Xs, Means, color="black", s=0.5, label="rational sum")
+        JsonData["Rational Sum"] = {"Means": Means, "Upper": Upper, "Lower": Lower}
 
         legend = ax.legend(loc='upper left', shadow=True, fontsize='small')
         ax.set_xlabel("Array Size")
         ax.set_ylabel("Execution time/sec")
-
         pyplt.savefig("Execution time.png", dpi=400)
+        # showing and saving stuff: ------------------------------------------------------------------------------------
 
         fig.show()
+        qj.json_encode(JsonData, "Execution time.json")
 
 
 
 
 
 
-    # BenchMarkOnErrors()
+
+    BenchMarkOnErrors()
     PlotTheExecutionTime()
 
 
