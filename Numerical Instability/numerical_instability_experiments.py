@@ -59,7 +59,7 @@ def python_fsum(theList: List[float]) -> float:
 
 def main():
 
-    def GetListofErrorsFor(sum1:callable, trials:int=1000, listSize:int=20):
+    def GetListofErrorsFor(sum1:callable, trials:int=30, listSize:int=30):
         Errors = []
         for TheList in [rand_list(listSize) for _ in range(trials)]:
             S2 = sum1(TheList)
@@ -67,7 +67,7 @@ def main():
             Errors.append(abs(S2 - S3))
         return stats.mean(Errors), stats.stdev(Errors)
 
-    def GetExecutionTimeFor(fxn: callable, trials: int=1000, listSize: int=20):
+    def GetExecutionTimeFor(fxn: callable, trials: int=30, listSize: int=30):
         import time
         Times = []
         for TheList in [rand_list(listSize) for _ in range(trials)]:
@@ -120,7 +120,7 @@ def main():
         Means, Upper, Lower = [], [], []
 
         for I in sizes:
-            TheSumMeans, TheSumStd, = GetExecutionTimeFor(fxn, trials=30, listSize=I)
+            TheSumMeans, TheSumStd, = GetExecutionTimeFor(fxn, trials=10, listSize=I)
             Means.append(TheSumMeans)
             Upper.append(TheSumMeans + TheSumStd)
             Lower.append(TheSumMeans - TheSumStd)
@@ -133,7 +133,7 @@ def main():
         JsonData = {}
 
         fig, ax = pyplt.subplots()
-        Xs = list(range(10, 500, 10))
+        Xs = list(range(10, 2000, 10))
         JsonData["Sizes"] = Xs
         # Calling the modules and scatter plot the data ----------------------------------------------------------------
         Means, Upper, Lower = BenchMarkOnTimesFor(fxn=khan_sum, sizes=Xs)
@@ -161,7 +161,7 @@ def main():
         qj.json_encode(JsonData, "Execution time.json")
 
 
-    BenchMarkOnErrors()
+    # BenchMarkOnErrors()
     PlotTheExecutionTime()
 
 
