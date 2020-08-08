@@ -482,13 +482,17 @@ class EknapsackSimplex:
             Solve the formultated LP problem and then return the results as a map.
         :return:
         """
-        Soln = {}  # To return -----------------------------------------------------------------------------------------
-        Problem = self.formulate_lp()
-        Problem.solve(lp.PULP_CBC_CMD(msg = False))
-        for I, Var in self._X.items():
-            if Var.varValue != 0:
-                Soln[I] = Var.varValue
-        return Soln, ksum.kahan_sum(V*self._P[I] for I, V in Soln.items())
+        try:
+            Soln = {}  # To return -------------------------------------------------------------------------------------
+            Problem = self.formulate_lp()
+            Problem.solve(lp.PULP_CBC_CMD(msg = False))
+            for I, Var in self._X.items():
+                if Var.varValue != 0:
+                    Soln[I] = Var.varValue
+            return Soln, ksum.kahan_sum(V*self._P[I] for I, V in Soln.items())
+        # Pulp Solver Error --------------------------------------------------------------------------------------------
+        except lp.apis.core.PulpSolverError:
+            return None, -float("-inf")
 
     @property
     def LpProblem(self):
