@@ -48,23 +48,39 @@ def benchmark_solver_for(solver, problems):
 
 
 def main():
-    ProblemList = get_problem_list(100, 30, 0.2, 3, )
 
-    def PulpSolver(p, w, c, b):
-        SolverInstance = ks.EknapsackSimplex(p, w, c, b)
-        return SolverInstance.solve()
+    def CompareSolversForProblemSize():
+        problemSize = 80
+        ProblemList = get_problem_list(30, problemSize, 0.2, 3)
 
-    def GreedyBBSolver(p, w, c, b):
-        SolverInstance = ks.EknapsackGreedy(p, w, c, b)
-        return SolverInstance.solve()
+        def PulpSolver(p, w, c, b):
+            SolverInstance = ks.EknapsackSimplex(p, w, c, b)
+            return SolverInstance.solve()
 
-    ExecutionTimePulp, ObjectivePulp = benchmark_solver_for(PulpSolver, ProblemList)
-    ExecutionTimeGreed, ObjectiveGreed = benchmark_solver_for(GreedyBBSolver, ProblemList)
+        def GreedyBBSolver(p, w, c, b):
+            SolverInstance = ks.EknapsackGreedy(p, w, c, b)
+            return SolverInstance.solve()
 
-    print(ExecutionTimePulp)
-    print(ExecutionTimeGreed)
-    print(ObjectivePulp)
-    print(ObjectiveGreed)
+        ExecutionTimePulp, ObjectivePulp = benchmark_solver_for(PulpSolver, ProblemList)
+        ExecutionTimeGreed, ObjectiveGreed = benchmark_solver_for(GreedyBBSolver, ProblemList)
+
+        print(ExecutionTimePulp)
+        print(ExecutionTimeGreed)
+        print(ObjectivePulp)
+        print(ObjectiveGreed)
+
+        JsonData = {}
+        JsonData["Problem_size"] = problemSize
+        JsonData["PulpSolver"] = {}
+        JsonData["GreedyBBSolver"] = {}
+        JsonData["PulpSolver"]["Execution_Time"] = ExecutionTimePulp
+        JsonData["PulpSolver"]["Objective_value"] = ObjectivePulp
+        JsonData["GreedyBBSolver"]["Execution_Time"] = ExecutionTimeGreed
+        JsonData["GreedyBBSolver"]["Objective_value"] = ObjectiveGreed
+        from quick_json import quick_json as qj
+        qj.json_encode(obj=JsonData, filename=f"Extended_knapsack_benchmark_results_problemsize{problemSize}.json")
+
+
 
 
 
