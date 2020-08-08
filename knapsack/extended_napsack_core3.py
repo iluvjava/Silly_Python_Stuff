@@ -55,6 +55,9 @@
 
 
 """
+
+__all__ = ["make_extended_knapsack_problem", "EknapsackGreedy", "EknapsackSimplex"]
+
 from typing import *
 import pulp as lp
 import random as rnd
@@ -66,7 +69,7 @@ import quick_json as qj
 RealNumberList = List[Union[float, int]]
 
 
-def make_extended_knapsack_problem(size: int, density: float, itemsCounts=5):
+def make_extended_knapsack_problem(size: int, density: float, itemsCounts=5, significance = 4):
     """
         Generate an extended knapsack problem where the integer solution of the problem is unqiue.
     :param size:
@@ -78,7 +81,7 @@ def make_extended_knapsack_problem(size: int, density: float, itemsCounts=5):
     """
     assert 0 < density < 1, "density must be a quantity that is between 0 and 1. "
     ToReturn = [(rnd.random(), rnd.random(),  int(rnd.random()*itemsCounts) + 1) for _ in range(size)]
-    ToReturn = list(map(lambda x: (round(x[0], 4), round(x[1], 4), x[2]), ToReturn))
+    ToReturn = list(map(lambda x: (round(x[0], significance), round(x[1], significance), x[2]), ToReturn))
     Budget = ksum.kahan_sum(W*C for _, W, C in ToReturn)*density
     return ToReturn, Budget
 
@@ -599,6 +602,8 @@ def main():
         KnapsackInstance.solve(verbose=True)
         pass
 
+    def CompareTheExecutionTime():
+        pass
 
     # RunBB()
     # LPFormulation()
