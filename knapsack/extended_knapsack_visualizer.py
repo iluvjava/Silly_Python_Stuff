@@ -62,8 +62,9 @@ def visualize_inputs_with_soln(profits, weights, counts, budget, soln, maxMarker
 def main():
 
     def GenerateRandomProblemAndPlot():
-        for _ in range(10):
-            PWC, B = eks.make_extended_knapsack_problem(size=100, density=0.1, itemsCounts=10, significance=9)
+        N = 10
+        for I in range(N):
+            PWC, B = eks.make_extended_knapsack_problem(size=100, density=1*((I+1)/(N+1)), itemsCounts=3, significance=9)
             P, W, C = list(map(list, zip(*PWC)))
 
             Solve = eks.EknapsackGreedy(P, W, C, B)
