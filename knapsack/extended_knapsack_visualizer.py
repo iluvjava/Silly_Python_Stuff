@@ -19,8 +19,8 @@ import math as math
 
 def visualize_inputs(profits, weights, counts, budget, maxMarkerSize = 150):
     # normalize supposed sizes of markers ------------------------------------------------------------------------------
-    Multiplier = maxMarkerSize/max(counts)
-    MarkerSizes = [Multiplier*(C) for C in counts]
+    MaxCount = max(C for C in counts)
+    MarkerSizes = [((C/MaxCount)**2)*maxMarkerSize for C in counts]
     # plot it ----------------------------------------------------------------------------------------------------------
     FigHandle, ax = plt.subplots(dpi=400)
     for P, W, S in zip(profits, weights, MarkerSizes):
@@ -64,7 +64,7 @@ def main():
     def GenerateRandomProblemAndPlot():
         N = 3
         for I in range(N):
-            PWC, B = eks.make_extended_knapsack_problem(size=130, density=1*((I+1)/(N+1)), itemsCounts=20, significance=9)
+            PWC, B = eks.make_extended_knapsack_problem(size=30, density=1*((I+1)/(N+1)), itemsCounts=30, significance=9)
             P, W, C = list(map(list, zip(*PWC)))
 
             Solve = eks.EknapsackGreedy(P, W, C, B)
@@ -74,9 +74,8 @@ def main():
             Fighanle.show()
 
     def Test():
-        PWC, B = eks.make_extended_knapsack_problem(size=8, density=0.1, itemsCounts=10, significance=9)
+        PWC, B = eks.make_extended_knapsack_problem(size=8, density=0.1, itemsCounts=100, significance=9)
         P, W, C = list(map(list, zip(*PWC)))
-
         Solve = eks.EknapsackGreedy(P, W, C, B)
         Solved, Obj = Solve.solve()
         print("P, W, C, B: ")
@@ -86,7 +85,8 @@ def main():
         Fighanle.show()
 
 
-    GenerateRandomProblemAndPlot()
+    # GenerateRandomProblemAndPlot()
+    Test()
 
 
 

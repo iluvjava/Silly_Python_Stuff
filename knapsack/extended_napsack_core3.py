@@ -208,7 +208,7 @@ class EknapsackGreedy:
                 else:
                     if RemainingBudget.Sum <= 0:
                         break
-                    ToTake = min(RemainingBudget/W[Idx], 15, C[Idx])
+                    ToTake = min(RemainingBudget/W[Idx], C[Idx])
                     Soln[Idx] = ToTake
                     RemainingBudget -= ToTake*W[Idx]
             return Soln
@@ -563,7 +563,7 @@ def main():
         ConditionsNumberPassed, ConditionNumberFailed = [], []
         for _ in range(TotalTests):
 
-            PWC, B = make_extended_knapsack_problem(5, 0.3)
+            PWC, B = make_extended_knapsack_problem(5, 0.3, itemsCounts=30)
             P, W, C = map(list, zip(*PWC))
 
             KnapsackInstance1 = EknapsackGreedy(P, W, C, B)
