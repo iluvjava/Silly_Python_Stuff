@@ -53,18 +53,18 @@ def visualize_inputs_with_soln(profits, weights, counts, budget, soln, maxMarker
     FigHandle, ax = visualize_inputs(profits, weights, counts, budget, maxMarkerSize)
     # Markersize Multiplier --------------------------------------------------------------------------------------------
     Multiplier = maxMarkerSize/max(counts)
-    for I in soln:
-        ax.scatter(profits[I], weights[I], s=soln[I]*weights[I]*Multiplier, color="black")
-        ax.annotate(f"|{soln[I]}|", (profits[I], weights[I]), color="orange", size=4)
+    for I, V in soln.items():
+        ax.scatter(profits[I], weights[I], s=((V/counts[I])**2)*(counts[I]*Multiplier), color="black", edgecolor="none")
+        ax.annotate(f"|{V}|", (profits[I], weights[I]), color="orange", size=4)
     return FigHandle, ax
 
 
 def main():
 
     def GenerateRandomProblemAndPlot():
-        N = 10
+        N = 3
         for I in range(N):
-            PWC, B = eks.make_extended_knapsack_problem(size=100, density=1*((I+1)/(N+1)), itemsCounts=3, significance=9)
+            PWC, B = eks.make_extended_knapsack_problem(size=130, density=1*((I+1)/(N+1)), itemsCounts=20, significance=9)
             P, W, C = list(map(list, zip(*PWC)))
 
             Solve = eks.EknapsackGreedy(P, W, C, B)
