@@ -1,0 +1,154 @@
+@startuml
+scale 0.9
+object InitialSoln {
+    Soln  = {2: 5, 0:2}
+    Obj = 2.7300000000000004
+}
+
+object Root {
+    Soln = {2: 5, 0: 2, 1: 2.999999999999999}
+    Obj = 3.7800000000000002
+}
+
+object P1 {
+    Soln = {1: 3, 2: 5, 0: 1.9999999999999993}
+    Obj = 3.78
+}
+
+object P0 {
+    Soln = {2: 5, 0: 2, 1: 2, 3: 0.31666666666666643}
+    Obj = 3.7118333333333338
+}
+
+object P01 {
+    Soln =  {3: 1, 2: 5, 0: 1.921052631578947}
+    Obj =  3.557631578947368
+}
+
+object P011 {
+    Soln = {3: 1, 0: 2, 2: 2.0000000000000018}
+    Obj = 2.9300000000000006
+    [#] Sub Optimal
+}
+
+object P010 {
+    Soln = {3: 1, 2: 5, 0: 1, 1: 1.842105263157894}
+    Obj = 3.474736842105263
+    [#] Sub Optimal
+}
+
+object P00 {
+    Soln = {2: 5, 0: 2, 1: 2, 4: 0.30158730158730135}
+    Obj = 3.701428571428572
+}
+
+object P001 {
+    Soln = {4: 1, 2: 5, 0: 1.8421052631578942}
+    Obj = 3.5052631578947366
+    [#] Sub Optimal
+}
+
+object P000 {
+    Soln =  {2: 5, 0: 2, 1: 2}
+    Obj = 3.4300000000000006
+    [#] Sub Optimal
+}
+
+object P11 {
+    Soln = {1: 3, 0: 2, 2: 4.999999999999982}
+    Obj = 3.779999999999996
+}
+
+object P10 {
+    Soln = {1: 4, 2: 5, 0: 1, 3: 0.3166666666666663}
+    Obj = 3.621833333333333
+}
+
+object P101 {
+    Soln = {1: 3, 3: 1, 2: 5, 0: 0.4210526315789473}
+    Obj = 3.4226315789473682
+    [#] Sub Optimal
+}
+
+object P100 {
+    Soln = {1: 4, 2: 5, 0: 1, 4: 0.30158730158730124}
+    Obj = 3.611428571428571
+}
+
+object P1001 {
+    Soln = {1: 3, 4: 1, 2: 5, 0: 0.342105263157894}
+    Obj = 3.370263157894736
+    [#] Sub Optimal
+}
+
+object P1000 {
+    Soln = {1: 4, 2: 5, 0: 1}
+    Obj = 3.34
+    [#] Sub Optimal
+}
+
+object P111 {
+    Soln = "Infeasible"
+    Obj = -inf
+}
+
+object P110 {
+    Soln = {1: 3.0526315789473677, 0: 2, 2: 4}
+    Obj = 3.568421052631579
+}
+
+object P1101 {
+    Soln = "Infeasible"
+    Obj = -inf
+}
+
+object P1100 {
+    Soln = {1: 3, 0: 2, 2: 4, 3: 0.01666666666666637}
+    Obj =  3.564833333333333
+}
+
+object P11001 {
+    Soln = "Infeasible"
+    Obj = -inf
+}
+
+object P11000 {
+    Soln = {1: 3, 0: 2, 2: 4, 4: 0.01587301587301559}
+    Obj =  3.564285714285714
+}
+
+object P110001 {
+    Soln = "None"
+    Obj = -inf
+}
+
+object P110000  {
+    Soln = {1: 3, 0: 2, 2: 4}
+    Obj = 3.55
+    [!] Integral Solution Updated
+}
+
+
+    Root --|> P1: <math>x_1 \geq 3</math>
+    Root --|> P0: <math>x1 \leq 3 </math>
+    P1 --|> P11: <math> x_0 \geq 1 </math>
+        P11 --|> P111: <math> x_2\geq 5 </math>
+        P11 --|> P110: <math> x_2\leq 4 </math>
+            P110 --|> P1101: <math> x_1\geq 4 </math>
+            P110 --|> P1100: <math> x_1\leq 3 </math>
+                P1100 --|> P11000: <math> x_3 = 0 </math>
+                    P11000 --|> P110001: <math> x_4 \geq 1 </math>
+                    P11000 --|> P110000: <math> x_4 = 0 </math>
+                P1100 --|> P11001: <math> x_3 \geq 1 </math>
+    P1 --|> P10: <math>x_0\leq 1</math>
+        P10 --|> P101: <math>x_3\geq 1</math>
+        P10 --|> P100: <math>x_3 = 0</math>
+            P100 --|> P1001: <math>x_4 \geq 1 </math>
+            P100 --|> P1000: <math>x_4 = 0</math>
+    P0 --|> P01: <math>x_3 \leq 0</math>
+        P01 --|> P011: <math>x_0 \geq 2</math>
+        P01 --|> P010: <math>x_0 \leq 1</math>
+    P0 --|> P00: <math> x_3 \geq 1 </math>
+        P00 --|> P001: <math> x_4 \geq 1 </math>
+        P00 --|> P000: <math> x_4 = 0 </math>
+@enduml
