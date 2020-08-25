@@ -1,5 +1,6 @@
 class IntegerMedianKeeper():
     """
+    Author: Alto Legato
         The range of all the integer data mustbe predefined.
         All must be positive integers.
     """
@@ -7,10 +8,12 @@ class IntegerMedianKeeper():
     def __init__(self, maxIntVal):
         self._N = 0
         self._P = (0, 0)  # index, frequency pointer, fixed at n//2 if even, n//2 + 1 if odd
-        # self._ElementToLeft = self._ElementToRight = 0  # the element the pointer is pointing at is not included.
+        self._Range = (0, maxIntVal)
         self._Arr = [0 for _ in range(maxIntVal + 1)]
 
     def add(self, E):
+        if E < self._Range[0] or E > self._Range[1]:
+            raise RuntimeError
         I, J, Arr = self._P[0], self._P[1], self._Arr
         self._N += 1
         Arr[E] += 1
@@ -45,7 +48,12 @@ class IntegerMedianKeeper():
                     self.__move_left()
                 else:
                     self.__move_right()
+            else:
+                if self._N%2 == 1:
+                    self.__move_left()
         self._N -= 1
+
+
 
 
     def __move_left(self):
@@ -78,18 +86,32 @@ class IntegerMedianKeeper():
                 I += 1
             self._P = (I, 1)
 
+    def __repr__(self):
+        S = "frequencies: \n"
+        Freq = {}
+        for I, V in enumerate(self._Arr):
+            if V != 0:
+                Freq[I] = V
+        S += f"{Freq}; "
+        S += f"Point pointing at the {self._P[1]} th element of {self._P[0]}; "
+        S += f"N: {self._N}"
+        return S
+
 
     def median(self):
         I, J = self._P
+        if self._N == 1:
+            return I
         Arr = self._Arr
         if self._N % 2 == 0:
             if Arr[I] == J:
                 I += 1
                 while Arr[I] == 0:
                     I += 1
-        if self._N % 2 == 1:
+            return (I + self._P[0]) / 2
+        else:
             return self._P[0]
-        return (I + self._P[0]) / 2
+
 
     @property
     def arr(self):
@@ -105,20 +127,6 @@ def sort_find_median(arr):
 
 
 def main():
-    def Test1():
-        Keeper = IntegerMedianKeeper(10)
-        Keeper.add(3)
-        print(Keeper.median())
-        Keeper.add(6)
-        print(Keeper.median())
-        Keeper.add(9)
-        print(Keeper.median())
-        Keeper.add(9)
-        print(Keeper.median())
-        Keeper.remove(9)
-        print(Keeper.median())
-        Keeper.remove(3)
-        print(Keeper.median())
 
     from random import random as rnd
     def Test2():
@@ -133,8 +141,8 @@ def main():
         return
 
     def Test3():
-        N, trials = 100, 100
-        D = 5
+        N, trials = 10, 1000
+        D = 10
         ReferenceArray = [int(rnd()*N) + 1 for _ in range(D)]
         Keeper = IntegerMedianKeeper(N)
         for E in ReferenceArray:
@@ -145,8 +153,8 @@ def main():
             Keeper.remove(ReferenceArray[0])
             ReferenceArray.pop(0)
             M1, M2 = sort_find_median(ReferenceArray), Keeper.median()
-            assert M1 == M2, f"{M1} != {M2}"
-    Test2()
+            assert M1 == M2, f"{M1} != {M2}, state of the object: \n{Keeper}"
+
     Test3()
 
 if __name__ == "__main__":
