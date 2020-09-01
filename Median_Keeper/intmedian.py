@@ -1,8 +1,14 @@
+__all__ = ["IntegerMedianKeeper"]
+
 class IntegerMedianKeeper():
     """
-    Author: Alto Legato
-        The range of all the integer data mustbe predefined.
-        All must be positive integers.
+        Given a stream of integer numbers, this class provides add(); remove() and median method
+        for dynamically keeping track of a subset of all the positive integers in the data stream
+        during real time.
+
+        Author: Alto Legato
+            The range of all the integer data mustbe predefined.
+            All must be positive integers.
     """
 
     def __init__(self, maxIntVal):
@@ -37,6 +43,10 @@ class IntegerMedianKeeper():
             raise RuntimeError
         I, J, Arr = self._P[0], self._P[1], self._Arr
         self._Arr[E] -= 1
+        # Edge case ----------------------------------------------------------------------------------------------------
+        if self._N == 1:
+            self._N -= 1
+            return
         # Decide where to move the pointer -----------------------------------------------------------------------------
         if E < I and self._N % 2 == 0:
             self.__move_right()
