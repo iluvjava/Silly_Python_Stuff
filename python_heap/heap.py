@@ -32,40 +32,67 @@ class Heap:
         self._Index = {}  # The reverse mapping from elements in the array to the index of that element.
 
     def push(self, element):
+
         pass
 
     def peek(self):
+
         pass
 
     def remove(self, element):
+
         pass
 
     def __percolate_up(self, idx):
         """
             Does it recursively
         :param idx:
+
         :return:
         """
-        H, P = self._Heap, self.__get_parent
+        H, P = self._Heap, self.__get_parent(idx)
         D = self._Index
-        if H[idx] < H[P[idx]]:  # swap with parent.
-            D[H[idx]], D[H[P[idx]]] = D[H[P[idx]]], D[H[idx]]
-            H[idx], H[P[idx]] = H[P[idx]], H[idx]
+        if H[idx] < H[P]:  # swap with parent.
+            D[H[idx]], D[H[P]] = D[H[P]], D[H[idx]]
+            H[idx], H[P] = H[P], H[idx]
         else:  # Base case
             return idx
-        return self.__percolate_up(P[idx])
+        return self.__percolate_up(P(idx))
 
     def __percolate_down(self, idx):
-        H, P = self._Heap, self.__get_parent
+        """
+            Percolate down is percolate its children up if it has any.
+        :param idx:
+        :return:
+        """
+        C1, C2 = self.__get_children(idx)
+        H = self._Heap
         D = self._Index
-
-        pass
+        C = C1 if C1 is not None else None
+        C = C if C is not None else C2
+        if C is None:  # no children to swap down
+            return idx
+        if H[idx] > H[C]:
+            D[C], D[idx] = D[idx], D[C]
+            H[C], H[idx] = H[idx], H[C]
+            return self.__percolate_down(C)
+        else:
+            return idx
 
     def __percolate(self, idx):
         return self.__percolate_up(self.__percolate_up(idx))
 
     def __get_children(self, idx):
-        return 2*idx + 1, 2*idx + 2
+        """
+
+        :param idx:
+        :return:
+            None if that children is out of the heap
+        """
+        C1, C2 = 2*idx + 1, 2*idx + 2
+        C1 = C1 if C1 < len(self._Heap) else None
+        C2 = C2 if C2 < len(self._Heap) else None
+        return C1, C2
 
     def __get_parent(self, idx):
         return round(idx/2) - 1
