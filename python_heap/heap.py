@@ -32,12 +32,17 @@ class Heap:
         self._Index = {}  # The reverse mapping from elements in the array to the index of that element.
 
     def push(self, element):
-
-        pass
+        if element in self._Freq:
+            self._Freq[element] += 1
+            return
+        self._Heap.append(element)
+        self._Freq[element] = 1
+        self._Index[element] = len(self._Heap) - 1
+        self.__percolate_up(len(self._Heap) - 1)
+        return
 
     def peek(self):
-
-        pass
+        return self._Heap[0]
 
     def remove(self, element):
 
