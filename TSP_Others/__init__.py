@@ -1,4 +1,3 @@
 """
-    This method gaomines other methods that solve the TSP problem.
-
+    This package investigates other methods that solve the TSP problem.
 """
