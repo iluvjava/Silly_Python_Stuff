@@ -66,6 +66,7 @@ def poly_val3(a, alpha):
     for C in reversed(a):
         ToSum.append(C * Xpow)
         Xpow *= alpha
+    ToSum.sort()
     return fsum(ToSum)
 
 
@@ -76,8 +77,13 @@ def poly_val4(a, alpha):
     for C in reversed(a):
         ToSum.append(C * Xpow)
         Xpow *= alpha
-
     return np.sum(ToSum)
+
+
+def poly_val5(a, alapha):
+    import numpy as np
+    return np.polyval(a, alapha)
+
 
 def get_row(r:int, j = None ):
     """
@@ -95,9 +101,9 @@ def get_row(r:int, j = None ):
 
 
 def main():
-    power = 50
+    power = 30
     a = get_row(power)
-    x = - 0.9
+    x = - 0.99
     print(a)
     Val = poly_val(a, x)
     ValCompare = nested_multiplications(a, x)
@@ -106,6 +112,7 @@ def main():
     print(poly_val2(a, x))
     print(poly_val3(a, x))
     print(poly_val4(a, x))
+    print(poly_val5(a, x))
     print((1 + x)**power)
 
 

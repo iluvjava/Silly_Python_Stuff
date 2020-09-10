@@ -49,6 +49,11 @@ take the value of the variable over the sum of all the other.
 
   * It appears by the end output side of the neuro-net where it predicts the probability of a output for 
   a certain classification results.  
+
+* Epoch: A full training pass over the entire dataset such that each example has been seen once. Thus, an epoch 
+represtnes N/(batch size) training iterations, where N is the total number of examples. 
+  * (BatchSize)*Epochs = N
+  * Note: Batchsize is an random sampling of the training dataset. 
  
  ## TF on a high level 
  
