@@ -71,7 +71,9 @@ def main():
             Solved, Obj = Solve.solve()
 
             Fighanle, ax = visualize_inputs_with_soln(P, W, C, B, Solved)
+            plt.savefig(f"theplot{I}.png", format="png", dpi=400)
             Fighanle.show()
+
 
     def Test():
         PWC, B = eks.make_extended_knapsack_problem(size=8, density=0.1, itemsCounts=100, significance=9)

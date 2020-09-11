@@ -1,3 +1,8 @@
+"""
+    Bench marks the dynamic programming solution to the binary knapsack problem
+    with the branchand bound algorithm.
+"""
+
 from random import random as rnd
 from numpy import random as np_rnd
 from time import time
