@@ -1,7 +1,9 @@
+#!/usr/bin/env python3
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib as mpl
 mpl.rcParams['figure.dpi'] = 600
+
 
 def poly_val_fsum(a, alpha):
     from math import fsum
@@ -42,24 +44,45 @@ def poly_val_numpy_poly(a, alapha):
     return np.polyval(a, alapha)
 
 
+def poly_val_exp(a, alpha):
+    import math as m
+    Xpow = 1
+    ToSum = []
+    for C in reversed(a):
+        ToSum.append(C * Xpow)
+        Xpow *= alpha
+    ToMul = []
+    for S in ToSum:
+        ToMul.append(m.e**S)
+    Product = 1
+    for S in ToMul:
+        Product *= S
+    return m.log(Product)
+
 
 if __name__ == "__main__":
     def main():
         def f(x):
-            return (x + 1)**100
-        Coeffs = get_row(100)
-        Xs = np.arange(-2, 0, 1e-4)
+            return (x + 1)**40
+        Coeffs = get_row(40)
+
+        Xs = np.arange(-2, 0, 1e-3)
         print(poly_numpy(Coeffs, -0.9))
+
         Ys1 = [np.log(abs(poly_numpy(Coeffs, X)) - f(X)) for X in Xs]
         Ys2 = [np.log(abs(poly_val_fsum(Coeffs, X) - f(X))) for X in Xs]
+        # Ys3 = [np.log(abs(poly_val_exp(Coeffs, X) - f(X))) for X in Xs]
         plt.scatter(Xs, Ys1, s=1, label="Numpy Polyval")
         plt.scatter(Xs, Ys2, color="red", s=1, alpha=0.2, label="Simple Fsum")
+        # plt.scatter(Xs, Ys3, color="green", s=1, alpha=0.2, label="Exp Sum")
         plt.legend()
         plt.ylabel("log(Error)")
         plt.xlabel("x")
 
         plt.show()
     main()
+    print(poly_val_exp([1, 2, 1], 2))
+
 
 
 
