@@ -6,9 +6,8 @@
     https://en.wikipedia.org/wiki/Diamond-square_algorithm
 
     Parameters involved in the model and what they are doing -----------------------------------------------------------
-    
-"""
 
+"""
 
 
 def main():
