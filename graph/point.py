@@ -39,6 +39,7 @@ def rand_points(topLeft, bottomRight, n):
         return  Point(x, y)
     return [randPointInSquare() for I in range(n)]
 
+
 def unit_circle(n = 10, r = 1):
     """
 
@@ -50,6 +51,7 @@ def unit_circle(n = 10, r = 1):
     pi = math.pi
     circle = [Point(r*cos((2*pi/n)*i), r*sin((2*pi/n)*i)) for i in range(n)]
     return circle
+
 
 def dis(a, b):
     """

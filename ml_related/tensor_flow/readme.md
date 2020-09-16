@@ -1,4 +1,5 @@
 # Machine learning with Tensorflow
+
 * [Major Refernces and Stuff](#major-references-and-stuff)
 
 * [TF on a high level](#tf-on-a-high-level)
@@ -62,6 +63,12 @@ represtnes N/(batch size) training iterations, where N is the total number of ex
 
 * Loss: The pentalty function for the models, it's NOT the metrics for measuring the efficiency of the model. Don't
 confuse these 2 please.
+
+* Precision: A number that measure the precision of a classifier. 
+  * Precision: TP/(TP + FP), when the classifier mark Positive, and the actual label of it is positive.
+
+* Recall:  TP/(TP + FN)
+  * T/F|P/N, T, F means whether the model got it correclty, P, N is, the output of the mdoel. 
 
  ## TF on a high level
 
