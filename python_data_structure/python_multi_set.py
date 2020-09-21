@@ -5,13 +5,15 @@
 
 from collections import Counter
 
+
 class OrderedMultiSet:
 
     """
         Created with the purpose of storing the symbols set for the sequence for the problem.
         * This is going to be an iterator.
         * This is going to support subset operation.
-        * Supports removal of one element at a time while iterating through.
+        * Supports removal of one element at a time while iterating through, but it has to
+        reset after one complete iteration.
         Author: Alto
     """
 

@@ -6,6 +6,8 @@ class IntegerMedianKeeper():
         for dynamically keeping track of a subset of all the positive integers in the data stream
         during real time.
 
+        * This well tested.
+
         Author: Alto Legato
             The range of all the integer data mustbe predefined.
             All must be positive integers.
@@ -62,9 +64,6 @@ class IntegerMedianKeeper():
                 if self._N%2 == 1:
                     self.__move_left()
         self._N -= 1
-
-
-
 
     def __move_left(self):
         """
