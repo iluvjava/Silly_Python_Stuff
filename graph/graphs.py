@@ -9,14 +9,14 @@ class SimpleDiGraph:
 
         you can only add edges and vertices to this graph.
 
-        * No self edge, no multiple edges.
+            * No self edge, no multiple edges.
 
-        * Undirected edges are modeled with 2 directional edges.
+            * Undirected edges are modeled with 2 directional edges.
     """
     def __init__(self):
         self._V = {}  # Integer Index |-> Generic Vertex
         self._VInvert = {}  # Generic |-> Integer Index
-        self._AdjLst = {}  # Integer Index of vertices |-> Other Integer Index of vertices
+        self._AdjLst = {}  # Integer Index of vertices |-> list of integers representing the neghbours
         self._E = {}  # Integer index Tuple |-> Generic Edge association.
 
     def __iadd__(self, vertex):
