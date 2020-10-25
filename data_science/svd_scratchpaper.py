@@ -9,6 +9,7 @@
 """
 
 import numpy as np
+import math as math
 np.set_printoptions(precision=3)
 
 def svd_demo():
@@ -39,7 +40,7 @@ def svd_with_eigh(m):
     eigh = np.linalg.eigh; diag = np.diag
     Lambdas, V = eigh(m.T@m)
     Lambdas = Lambdas.round(10)
-    SigmaSqrtInv = np.array([1 / E ** 0.5 if E != 0 else E for E in Lambdas])
+    SigmaSqrtInv = np.array([0 if math.isclose(E, 0) else 1/E**0.5 for E in Lambdas])
     U = m@V@diag(SigmaSqrtInv)
     return U, diag(Lambdas**0.5), V
 
@@ -55,14 +56,15 @@ def svd_with_eigh_sorted(m):
     eigh = np.linalg.eigh
     diag = np.diag
     Lambdas, V = eigh(m.T @ m)
-    Lambdas = Lambdas.round(10)
+    Lambdas = Lambdas.round(15)
     EigenTuple = []
     for I in range(len(Lambdas)):
         EigenTuple.append((Lambdas[I], V[:, I]))
     EigenTuple = sorted(EigenTuple, key=lambda x: x[0], reverse=True)
     Lambdas = sorted([L for L in Lambdas], reverse=True)
     V = np.array([T[1] for T in EigenTuple]).T
-    SigmaSqrtInv = np.array([1 / E ** 0.5 if E != 0 else E for E in Lambdas])
+    SigmaSqrtInv = np.array([0 if E == 0 else 1/E**0.5 for E in Lambdas])
+
     U = m @ V @ diag(SigmaSqrtInv)
     return U, diag(np.array(Lambdas)**0.5), V
 
@@ -79,9 +81,8 @@ def double_eigh_demo():
           "are the same. ")
 
 def main():
-    RandomMatrix = np.random.random((10, 10))
+    RandomMatrix = np.random.random((2000, 2000))
     U, Sigma, V = svd_with_eigh_sorted(RandomMatrix)
-
     print("U, Sigma, V")
     print(U)
     print(Sigma)
@@ -90,6 +91,8 @@ def main():
     print(U@Sigma@V.T)
     print("Random Matrix")
     print(RandomMatrix)
+    print("shoud be identity")
+    print(U@U.T)
 
 
 if __name__ == "__main__":
