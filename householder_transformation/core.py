@@ -11,51 +11,54 @@ rand = np.random.rand
 zeros = np.zeros
 triu = np.triu
 tril = np.tril
+isclose = math.isclose
 np.set_printoptions(precision=4)
 
 
-def qr_factor(A):
+def qr_factor(R):
     """
-        Performs a Householder Transformation on the given matrix A.
+        Performs a Householder Transformation on the given matrix A,
+        full QR Decomposition.
     """
-    A = A.copy()
-    assert len(A.shape) == 2
-    m, n = A.shape[0], A.shape[1]
+    R = R.copy().astype("float64")
+    assert len(R.shape) == 2
+    m, n = R.shape[0], R.shape[1]
     Q = eye(m)
-    for K in range(n - 1):
-        z = A[K:m, [K]]
+    for K in range((n - 1) if n == m else n):
+        z = R[K:m, [K]]
         v = zeros((z.shape[0], 1))
-        v[0, 0] = -sign(z[0])*norm(z)
+        NormZ = norm(z)
+        if isclose(NormZ, 0): raise Exception("Rank Defecit")
+        v[0, 0] = (1 if z[0] < 0 else -1)*NormZ
         v = v - z
         v = v/norm(v)
-        J = list(range(K, n))
-        A[K: m, J] = A[K: m, J] - 2*(v@v.T@A[K: m, J])
+        J = list(range(n))
+        R[K: m, :n] = R[K: m, J] - 2*(v@v.T)@R[K: m, J]
         J = list(range(m))
-        Q[K: m, J] = Q[K: m, J] - 2*(v@v.T@Q[K: m, J])
-    return Q.T,  A
+        Q[K: m, :m] = Q[K: m, J] - 2*(v@v.T)@Q[K: m, J]
+    return Q.T, triu(R)
 
 
 def main():
-    M = rand(3, 3) * (10)
-    M = M.round(0)
-    print("This is the original matrix: ")
-    print(M)
-    Q, R = qr_factor(M)
-    print("This is its factor, Q, R")
+    def PathologicalInput1():
+        A = arr([[0, 1], [1, 1]])
+        print(A)
+        Q, R = qr_factor(A)
+        print("These are the factors: ")
+        print(Q)
+        print(R)
+        print("Matrix Reconstructed: ")
+        print(Q @ R)
+
+    A = arr([[0, 1], [1, 0], [1, 0]])
+    print(A)
+    Q, R = qr_factor(A)
+    print("These are the factors: ")
     print(Q)
     print(R)
-    print("This is the reconstruction of the matrix: ")
+    print("Matrix Reconstructed: ")
     print(Q @ R)
-    print("This is Q Q transpose")
-    print(Q @ Q.T)
 
-    M = rand(1000, 100) * (10)
-    M = M.round(0)
-    Q, R = qr_factor(M)
-    print(norm((Q @ R - M)))
-    print(norm(Q @ Q.T - eye(Q.shape[0])))
-
-    M = arr([[0, 1, 1], [1, 1, 1], [1, 1, 1]])
     pass
 
 
