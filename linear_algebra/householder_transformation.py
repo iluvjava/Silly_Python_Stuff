@@ -1,19 +1,13 @@
 # Must run this.
-import numpy as np
-import math as math
-sign = np.sign
-eye = np.identity
-sqrt = math.sqrt
-norm = np.linalg.norm
-arr = np.array
-vstack = np.vstack
-rand = np.random.rand
-zeros = np.zeros
-triu = np.triu
-tril = np.tril
-isclose = math.isclose
-np.set_printoptions(precision=4)
+from numpy import identity, array, zeros, triu, set_printoptions
+from numpy.linalg import norm
+from math import isclose
+eye = identity
+arr = array
+set_printoptions(precision=4)
 
+
+__all__ = ["qr_factor"]
 
 def qr_factor(R):
     """
