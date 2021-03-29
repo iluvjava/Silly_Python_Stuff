@@ -15,7 +15,7 @@ import matplotlib.pyplot as pyplt
 class TravelingSalesManLP(FullGraph2D):
     """
         This reduction has a polynomial number of constraints applied to the system, and it's formulated by
-        Miller Tucker Zemlin.
+        Miller Tucker Zemlin.   
         Here are the variable:
             x_{i, j}: Going from city i to city j at some point during the tour.
                 * Binary
