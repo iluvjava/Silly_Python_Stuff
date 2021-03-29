@@ -55,10 +55,7 @@ class MyComplexFxn:
             self.u = re(expr); self.v = im(expr)
             uv_diff()
             return
-
         raise RuntimeError("You didn't put in anything. ")
-
-
 
     def is_cauchy_riemann(self):
         """
@@ -75,7 +72,7 @@ class MyComplexFxn:
     @staticmethod
     def get_vars():
         """
-                Conveniently get the variables you need to define the parts function and the complex function
+            Conveniently get the variables you need to define the parts function and the complex function
         :return:
         """
         return symbols("x", real=True), symbols("y", real=True),  symbols("z")
